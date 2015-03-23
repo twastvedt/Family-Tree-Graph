@@ -3,41 +3,52 @@
 'use strict';
 
 var d3 = require('d3'),
+	settings = require('./settings.json'),
 
-	rootFamilyID = 'F0000',
-
-	xml,
+	xml, svg, force,
 
 	data = {
-		"people": [],
-		"families": [],
-		"links": []
-	};
+		"people": {},
+		"families": {},
+		"links": [],
+		"levels": [],
+		"maxLevel": 0
+	},
+	//this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
+	familiesToDo = d3.map();
+
+var toPolar = function(d) {
+	return [Math.sqrt(d[0]*d[0] + d[1]*d[1]), Math.atan2(d[1], d[0])];
+};
+
+var fromPolar = function(d) {
+	return [Math.cos(d[1]) * d[0], Math.sin(d[1]) * d[0]];
+};
 
 var getPerson = function(handle) {
 	var person = xml.select('person[handle=' + handle + ']');
 
 	if (! person.empty()) {
-		person = person[0];
-
 		var personData = {
-				"gender": person.select('gender').innerHTML(),
-				"handle": handle
+				"gender": person.select('gender').text(),
+				"handle": handle,
+				"type": "person",
+				"sort": []
 			};
 
-		if (! person.select('parentIn').empty()) {
-			personData.parentIn = person.select('parentin').getAttribute('hlink');
+		if (! person.select('parentin').empty()) {
+			personData.parentIn = person.select('parentin').attr('hlink');
 		}
-		if (! person.select('childOf').empty()) {
-			personData.childOf = person.select('childof').getAttribute('hlink');
+		if (! person.select('childof').empty()) {
+			personData.childOf = person.select('childof').attr('hlink');
 		}
 
 		var nameXML = person.select('name'),
 
-			name = nameXML.select('first').innerHTML();
+			name = nameXML.select('first').text();
 
 		nameXML.selectAll('surname').each(function() {
-			name += ' ' + this.innerHTML();
+			name += ' ' + d3.select(this).text();
 		});
 
 		personData.name = name;
@@ -55,14 +66,15 @@ var getFamily = function(handle) {
 	if (! family.empty()) {
 		var familyData = {
 			"handle": handle,
-			"children": []
+			"children": [],
+			"type": "family"
 		};
 
 		if (! family.select('father').empty()) {
-			family.father = family.select('father').getAttribute('hlink');
+			familyData.father = family.select('father').attr('hlink');
 		}
 		if (! family.select('mother').empty()) {
-			family.mother = family.select('mother').getAttribute('hlink');
+			familyData.mother = family.select('mother').attr('hlink');
 		}
 
 		family.selectAll('childref').each(function() {
@@ -76,126 +88,116 @@ var getFamily = function(handle) {
 	}
 };
 
-var parseData = function(error, xml) {
-	var rootFamilyHandle = xml.select('family[id=' + rootFamilyID + ']')
-							.getAttribute('handle'),
+var playPause = function() {
+	if (force.alpha() > 0) {
+		force.stop();
 
-		familiesToDo = [rootFamilyHandle];
+		d3.select('#button-playPause').text("Resume");
+	} else {
+		force.resume();
 
-	while (familiesToDo.length) {
-		var family = getFamily(familiesToDo.pop());
-
-		data.families.push(family);
-
-		if (family.hasOwnProperty("father")) {
-			//create object for father and add to list of people
-			var father = getPerson(family.father);
-			data.people.push(father);
-
-			//add father's family to list to do
-			if (father.hasOwnProperty("childOf")) {
-				familiesToDo.push(father.childOf);
-			}
-
-			//add link from father to family
-			data.links.push({
-				"source": father,
-				"target": family
-			});
-		}
-
-		if (family.hasOwnProperty("mother")) {
-			//create object for mother and add to list of people
-			var mother = getPerson(family.mother);
-			data.people.push(mother);
-
-			//add mother's family to list to do
-			if (mother.hasOwnProperty("childOf")) {
-				familiesToDo.push(mother.childOf);
-			}
-
-			//add link from mother to family
-			data.links.push({
-				"source": mother,
-				"target": family
-			});
-		}
-
-		for (var child in family.children) {
-			if (family.children.hasOwnProperty(child)) {
-				//create child object and add to list of people
-				child = getPerson(child);
-				data.people.push(child);
-
-				//add links from family to children
-				data.links.push({
-					"source": family,
-					"target": child
-				});
-			}
-		}
+		d3.select('#button-playPause').text("Pause");
 	}
 };
 
 var setupGraph = function() {
-	var margin = {top: 20, right: 20, bottom: 30, left: 50},
-		width = 1200 - margin.left - margin.right,
-		height = 600 - margin.top - margin.bottom;
+	svg = d3.select("body").append("svg:svg");
 
-	var svg = d3.select("body").append("svg:svg")
-		.attr({
-			"width": width + margin.left + margin.right,
-			"height": height + margin.top + margin.bottom
+	var width = window.innerWidth - 50,
+		height = window.innerHeight - svg.node().getBoundingClientRect().top - 50;
+
+	svg.attr({
+		"width": width,
+		"height": height
+	});
+
+	force = d3.layout.force()
+		.gravity(settings.gravity)
+		.charge(settings.charge)
+		.friction(settings.friction)
+		.alpha(settings.alpha)
+		.size([1, 1])
+
+		.nodes(data.nodeList)
+		.links(data.links);
+
+	var zoom = function() {
+		main.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	};
+
+	var main = svg.append("g")
+				.attr({"transform": "translate(" + width / 2 + "," + height / 2 + ")"})
+				.call(d3.behavior.zoom().scaleExtent([0.5, 8]).on("zoom", zoom))
+					.append("g");
+
+	main.append("rect")
+		.attr({"transform": "translate(" + (-width / 2) + "," + (-height / 2) + ")",
+			"class": "overlay",
+			"width": width,
+			"height": height
 		});
 
-	var force = d3.layout.force()
-		.gravity(0.05)
-		.distance(100)
-		.charge(-100)
-		.size([svg.width, svg.height])
+	//////////////////////
+	//grid background
+	var grid = main.append("g")
+		.attr({"class": "grid"});
 
-		.nodes(data.people + data.families)
-		.links(data.links)
+	for (var i = 1; i <= data.maxLevel; i++) {
+		grid.append("circle")
+			.attr({"class": "level",
+				"r": i * settings.ringSpacing});
+	}
 
-		.start();
-
-	svg.append("g")
-		.attr({"class": "main",
-			"transform": "translate(" + margin.left + "," + margin.top + ")"
-		});
-
-	var link = svg.select(".main").selectAll(".link")
+	///////////
+	//draw tree
+	var links = main.selectAll(".link")
 		.data(data.links)
 		.enter().append("line")
-		.attr("class", "link");
-
-	var people = svg.select(".main").selectAll(".person")
-		.data(data.people, function(d) { return d.handle; })
-		.enter().append("g")
-		.attr({
-			"class": "person",
-			"id": function(d) { return d.handle; }
+		.attr({"class": "link",
+			"type": function(d) { return d.type; }
 		});
 
-	var families = svg.select(".main").selectAll(".family")
-		.data(data.families, function(d) { return d.handle; })
+	var nodes = main.selectAll(".node")
+		.data(data.nodeList, function(d) { return d.handle; })
 		.enter().append("g")
 		.attr({
-			"class": "family",
+			"class": "node",
 			"id": function(d) { return d.handle; }
-		});
+		})
+		.classed('person', function(d) { return d.type === "person"; })
+		.classed('family', function(d) { return d.type === "family"; });
+
+	var people = main.selectAll(".person");
+	var families = main.selectAll(".family");
 
 	people.append("text")
-		.text("P");
+		.text(function(d) { return d.name; });
 
 	families.append("text")
 		.text("+");
 
+	////////
+	//events
 	force.on("tick", function() {
-		link.attr("x1", function(d) { return d.source.x; })
-			.attr("y1", function(d) { return d.source.y; })
-			.attr("x2", function(d) { return d.target.x; })
-			.attr("y2", function(d) { return d.target.y; });
+		//pull nodes to correct ring
+		nodes.each(function(d) {
+			if (d.x && d.y) {
+				var targetR = settings.ringSpacing * d.level,
+					currentPolar = toPolar([d.x, d.y]),
+					rAdjust = Math.max(-settings.constraintStrength, Math.min(settings.constraintStrength, targetR - currentPolar[0])),
+
+					newPos = fromPolar([currentPolar[0] + rAdjust, currentPolar[1]]);
+
+				d.x = newPos[0];
+				d.y = newPos[1];
+			}
+		});
+
+		//apply transformations
+		links.attr({"x1": function(d) { return d.source.x; },
+				"y1": function(d) { return d.source.y; },
+				"x2": function(d) { return d.target.x; },
+				"y2": function(d) { return d.target.y; } });
 
 		people.attr("transform", function(d) {
 			return "translate(" + d.x + "," + d.y + ")";
@@ -203,11 +205,214 @@ var setupGraph = function() {
 		families.attr("transform", function(d) {
 			return "translate(" + d.x + "," + d.y + ")";
 		});
+		//can't stop won't stop
+		force.resume();
 	});
 
-	return svg;
+	d3.select('#button-playPause').on('click', playPause);
+
+	///////
+	//start
+	force.linkDistance(function(d) {
+			switch (d.type) {
+				case "parent":
+					return settings.ringSpacing * settings.parentLinkDistance;
+				case "child":
+					return settings.ringSpacing * settings.childLinkDistance;
+				case "spouse":
+					return settings.ringSpacing * settings.parentLinkDistance * 2;
+				default:
+					return 1;
+			}
+		})
+		.linkStrength(function(d) {
+			switch (d.type) {
+				case "parent":
+					return 1;
+				case "child":
+					return 0.2;
+				case "spouse":
+					return 0.5;
+				default:
+					return 1;
+			}
+		});
+
+	force.start();
 };
 
-d3.xml('data/family-tree.gramps', parseData);
+var addToLevel = function(person, level) {
+	//make sure the list for this level exists before adding a person to it
 
-setupGraph();
+	if (typeof data.levels[level] === 'undefined') {
+		data.levels[level] = [];
+	}
+	data.levels[level].push(person);
+};
+
+var addParent = function(family, spouse, sortList) {
+	//spouse === 'father'||'mother'
+
+	var parent;
+
+	if (family.hasOwnProperty(spouse)) {
+
+		if (!data.people.hasOwnProperty(family[spouse])) {
+			//parent not already processed
+
+			//create object for parent and add to list of people
+			parent = getPerson(family[spouse]);
+
+			parent.level = family.level;
+			parent.sortList = sortList;
+
+			if (sortList[0].rel === 'child') {
+				//sortList comes from child
+				parent.sortList[0].rel = 'parent';
+			}
+			//father defaults to left side of marriage in graph, mother to right
+			parent.sortList[0].order = (spouse === 'father' ? -1 : 1);
+
+			data.people[parent.handle] = parent;
+
+			addToLevel(parent, parent.level);
+
+			//add parent's family to list to do if it hasn't already been processed
+			if (parent.hasOwnProperty("childOf") && !data.people.hasOwnProperty(parent.childOf)) {
+				familiesToDo.set(parent.childOf, parent.sortList.unshift({'rel': 'child', 'order': 0}));
+			}
+		} else {
+			//link to already processed person object
+			parent = data.people[family[spouse]];
+		}
+
+		//add link from father to family
+		data.links.push({
+			"source": parent,
+			"target": family,
+			"type": "parent"
+		});
+	}
+};
+
+var parseData = function(error, xmlDoc) {
+	xml = d3.select(xmlDoc);
+
+	var rootFamilyHandle = xml.select('family#' + settings.rootFamilyId)
+							.attr('handle');
+
+	familiesToDo.set(rootFamilyHandle, [1, [{'rel': 'parent', 'order': 0}]]);
+
+	while (familiesToDo.size()) {
+		var familyId = familiesToDo.keys()[0],
+			familyData = familiesToDo.get(familyId),
+			level = familyData[0],
+			sortList = familyData[1],
+			family = getFamily(familyId);
+
+		family.level = level;
+
+		//keep track of how many levels data contains, for scaling and graph lines
+		data.maxLevel = Math.max(data.maxLevel, level);
+
+		familiesToDo.remove(familyId);
+
+		//store this family in the list of all families
+		data.families[familyId] = family;
+
+		addParent(family, 'father', sortList);
+		addParent(family, 'mother', sortList);
+
+		for (var i = 0; i < family.children.length; i++) {
+			var childId = family.children[i];
+
+			if (family.children.hasOwnProperty(childId)) {
+				var child;
+
+				if (data.people.hasOwnProperty(family.children[childId])) {
+					child = data.people[family.children[childId]];
+				} else {
+					//create child object and add to list of people
+					child = getPerson(family.children[childId]);
+
+					child.level = level - 1;
+
+					child.sortList = sortList;
+
+					if (sortList[0].rel === 'child') {
+						//sortList comes from sibling
+						child.sortList[0] = {'rel': 'sibling',
+							//if this family is linked by a child on the right side of a marriage, add siblings to the right, and vice versa
+							'order': i + (child.sortList[1].order >= 0 ? 1 : -1)
+						};
+					} else {
+						//sortList comes from parent
+						child.sortList[0] = {'rel': 'child', 'order': i};
+					}
+
+					//add child's family to list to do if it hasn't already been processed
+					if (child.hasOwnProperty("parentIn") && !data.people.hasOwnProperty(child.parentIn)) {
+						familiesToDo.set(child.parentIn, child.sortList.unshift({'rel': 'parent', 'order': 0}));
+					}
+
+					//add child to list of all people
+					data.people[child.handle] = child;
+					//add child to list of other people on same level
+					addToLevel(child, child.level);
+				}
+
+				//add links from family to children
+				data.links.push({
+					"source": family,
+					"target": child,
+					"type": "child"
+				});
+			}
+		}
+	}
+
+	//distill sortList into a number representing
+	//the person's lateral distance from the root family in the graph
+	for (var i = 0; i < data.people.length; i++) {
+		var person = data.people[i],
+			sortValue = 0;
+
+		for (var j = 0; j < person.sortList.length; j++) {
+			sortValue += person.sortList[j].order;
+		}
+		person.sortValue = sortValue;
+	}
+
+	//sort people in each level based on lateral location in the graph
+	var sortLevel = function(a, b) {
+		return a.sortValue > b.sortValue;
+	};
+
+	for (i = 0; i < data.levels.length; i++) {
+		data.levels[i].sort(sortLevel);
+	}
+
+	//assign a starting location to each person
+	for (i = 0; i < data.levels.length; i++) {
+		var length = data.levels[i].length,
+			curLevel = data.levels[i].length;
+
+		for (var j = 0; j < length; j++) {
+			var person = curLevel[j],
+				theta = j/length * 2 * Math.PI,
+				coords = fromPolar([i * settings.ringSpacing, theta]);
+
+			person.x = coords[0];
+			person.y = coords[1];
+		}
+	}
+
+
+	//combine people and families to make list of all nodes
+	data.nodeList = d3.values(data.people).concat(d3.values(data.families));
+
+	setupGraph();
+};
+
+
+d3.xml('data/family-tree.xml', parseData);

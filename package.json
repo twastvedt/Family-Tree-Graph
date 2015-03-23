@@ -4,19 +4,18 @@
   "description": "A D3 family tree graph generated from a GRAMPS XML export",
   "main": "index.js",
   "scripts": {
-    "css": "node-sass --source-map scss/index.scss css/index.css",
+    "css": "node-sass --source-map css/index.css.map -o css scss/index.scss css/index.css",
     "css:watch": "npm run css -- -w",
     "serve": "http-server -p 9090 ./",
-    "js:build": "browserify js/src/index.js > js/dist/bundle.js",
+    "js:build": "browserify -d js/src/index.js > js/dist/bundle.js",
     "js:watch": "watchify js/src/index.js -do js/dist/bundle.js",
-    "dev": "parallelshell 'npm run js:build' 'npm run css:watch' 'npm run js:watch' 'npm run serve'"
+    "dev": "parallelshell \"npm run js:build & npm run js:watch\" \"npm run css:watch\" \"npm run serve\""
   },
   "author": "Trygve Wastvedt <trygve.wastvedt@gmail.com>",
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "d3": "^3.5.5",
-    "jquery": "^2.1.3"
+    "d3": "^3.5.5"
   },
   "devDependencies": {
     "node-sass": "^2.0.1",

@@ -1,0 +1,23 @@
+{
+	//ID of starting family
+	"rootFamilyId": "F0000",
+
+	//distance between generations
+	"ringSpacing": 100,
+
+	//maximum change in node position per tick due to any single force
+	"constraintStrength": 0.2,
+
+	"gravity": 0,
+
+	//link lengths as factors of ringSpacing
+	"childLinkDistance": 1.05,
+
+	"parentLinkDistance": 0.25,
+
+	"charge": -20,
+
+	"friction": 0.9,
+
+	"alpha": 0.2
+}
