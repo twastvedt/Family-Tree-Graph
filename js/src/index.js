@@ -33,7 +33,9 @@ var getPerson = function(handle) {
 				"gender": person.select('gender').text(),
 				"handle": handle,
 				"type": "person",
-				"sort": []
+				"sort": [],
+				"surNames": [],
+				"surName": ''
 			};
 
 		if (! person.select('parentin').empty()) {
@@ -43,15 +45,19 @@ var getPerson = function(handle) {
 			personData.childOf = person.select('childof').attr('hlink');
 		}
 
-		var nameXML = person.select('name'),
+		var nameXML = person.select('name');
 
-			name = nameXML.select('first').text();
+		personData.firstName = nameXML.select('first').text();
 
 		nameXML.selectAll('surname').each(function() {
-			name += ' ' + d3.select(this).text();
+			personData.surNames.push({
+				'name': this.innerHTML,
+				'type': this.getAttribute('derivation')
+			});
+			personData.surName += this.innerHTML + ' ';
 		});
 
-		personData.name = name;
+		personData.surName = personData.surName.slice(0, -1);
 
 		return personData;
 
@@ -171,22 +177,31 @@ var setupGraph = function() {
 	var families = main.selectAll(".family");
 
 	people.append("text")
-		.text(function(d) { return d.name; });
+		.text(function(d) { return d.firstName; });
 
 	families.append("text")
-		.text("+");
+		.text(function(d) { return d.name; });
 
 	////////
 	//events
 	force.on("tick", function() {
-		//pull nodes to correct ring
-		nodes.each(function(d) {
+		//lock nodes on correct ring
+		people.each(function(d) {
 			if (d.x && d.y) {
-				var targetR = settings.ringSpacing * d.level,
-					currentPolar = toPolar([d.x, d.y]),
-					rAdjust = Math.max(-settings.constraintStrength, Math.min(settings.constraintStrength, targetR - currentPolar[0])),
+				var currentPolar = toPolar([d.x, d.y]),
+					newPos = fromPolar([d.level * settings.ringSpacing, currentPolar[1]]);
 
-					newPos = fromPolar([currentPolar[0] + rAdjust, currentPolar[1]]);
+				d.x = newPos[0];
+				d.y = newPos[1];
+			}
+		});
+
+		//family node stays between parents
+		families.each(function(d) {
+			if (d.x && d.y && d.father && d.mother) {
+				var fatherPolar = toPolar([d.father.x, d.father.y]),
+					motherPolar = toPolar([d.mother.x, d.mother.y]),
+					newPos = fromPolar([fatherPolar[0], (fatherPolar[1] + motherPolar[1])/2]);
 
 				d.x = newPos[0];
 				d.y = newPos[1];
@@ -255,44 +270,47 @@ var addParent = function(family, spouse, sortList) {
 
 	var parent;
 
-	if (family.hasOwnProperty(spouse)) {
+	if (!data.people.hasOwnProperty(family[spouse])) {
+		//parent not already processed
 
-		if (!data.people.hasOwnProperty(family[spouse])) {
-			//parent not already processed
+		//create object for parent and add to list of people
+		parent = getPerson(family[spouse]);
 
-			//create object for parent and add to list of people
-			parent = getPerson(family[spouse]);
+		parent.level = family.level;
+		parent.sortList = sortList;
 
-			parent.level = family.level;
-			parent.sortList = sortList;
-
-			if (sortList[0].rel === 'child') {
-				//sortList comes from child
-				parent.sortList[0].rel = 'parent';
-			}
-			//father defaults to left side of marriage in graph, mother to right
-			parent.sortList[0].order = (spouse === 'father' ? -1 : 1);
-
-			data.people[parent.handle] = parent;
-
-			addToLevel(parent, parent.level);
-
-			//add parent's family to list to do if it hasn't already been processed
-			if (parent.hasOwnProperty("childOf") && !data.people.hasOwnProperty(parent.childOf)) {
-				familiesToDo.set(parent.childOf, parent.sortList.unshift({'rel': 'child', 'order': 0}));
-			}
+		if (sortList[0].rel === 'child') {
+			//sortList comes from child
+			parent.sortList[0] = {'rel': 'parent'};
 		} else {
-			//link to already processed person object
-			parent = data.people[family[spouse]];
+			//sortList comes from other parent
+			parent.sortList[0] = {'rel': 'spouse'};
 		}
+		//father defaults to left side of marriage in graph, mother to right
+		parent.sortList[0].order = (spouse === 'father' ? -1 : 1);
 
-		//add link from father to family
-		data.links.push({
-			"source": parent,
-			"target": family,
-			"type": "parent"
-		});
+		data.people[parent.handle] = parent;
+
+		addToLevel(parent, parent.level);
+
+		//add parent's family to list to do if it hasn't already been processed
+		if (parent.hasOwnProperty("childOf") && !data.families.hasOwnProperty(parent.childOf)) {
+			familiesToDo.set(parent.childOf, [parent.level + 1, [{'rel': 'child', 'order': 0}].concat(parent.sortList)]);
+		}
+	} else {
+		//link to already processed person object
+		parent = data.people[family[spouse]];
 	}
+
+	//replace id with object
+	family[spouse] = parent;
+
+	//add link from father to family
+	data.links.push({
+		"source": parent,
+		"target": family,
+		"type": "parent"
+	});
 };
 
 var parseData = function(error, xmlDoc) {
@@ -320,82 +338,91 @@ var parseData = function(error, xmlDoc) {
 		//store this family in the list of all families
 		data.families[familyId] = family;
 
-		addParent(family, 'father', sortList);
-		addParent(family, 'mother', sortList);
+		if (family.hasOwnProperty('father')) {
+			addParent(family, 'father', sortList.slice());
+
+			family.name = family.father.surName;
+		}
+
+		if (family.hasOwnProperty('mother')) {
+			addParent(family, 'mother', sortList.slice());
+		}
 
 		for (var i = 0; i < family.children.length; i++) {
-			var childId = family.children[i];
+			var childId = family.children[i],
+				child;
 
-			if (family.children.hasOwnProperty(childId)) {
-				var child;
+			if (data.people.hasOwnProperty(childId)) {
+				child = data.people[childId];
+			} else {
+				//create child object and add to list of people
+				child = getPerson(childId);
 
-				if (data.people.hasOwnProperty(family.children[childId])) {
-					child = data.people[family.children[childId]];
+				child.level = level - 1;
+
+				child.sortList = sortList.slice();
+
+				if (sortList[0].rel === 'child') {
+					//sortList comes from sibling
+					child.sortList[0] = {'rel': 'sibling', 'order': i};
+
+					if (child.sortList.length > 1) {
+						//if this family is linked by a child on the right side of a marriage, add siblings to the right, and vice versa
+						child.sortList[0].order += (child.sortList[1].order >= 0 ? 1 : -1);
+					}
 				} else {
-					//create child object and add to list of people
-					child = getPerson(family.children[childId]);
-
-					child.level = level - 1;
-
-					child.sortList = sortList;
-
-					if (sortList[0].rel === 'child') {
-						//sortList comes from sibling
-						child.sortList[0] = {'rel': 'sibling',
-							//if this family is linked by a child on the right side of a marriage, add siblings to the right, and vice versa
-							'order': i + (child.sortList[1].order >= 0 ? 1 : -1)
-						};
-					} else {
-						//sortList comes from parent
-						child.sortList[0] = {'rel': 'child', 'order': i};
-					}
-
-					//add child's family to list to do if it hasn't already been processed
-					if (child.hasOwnProperty("parentIn") && !data.people.hasOwnProperty(child.parentIn)) {
-						familiesToDo.set(child.parentIn, child.sortList.unshift({'rel': 'parent', 'order': 0}));
-					}
-
-					//add child to list of all people
-					data.people[child.handle] = child;
-					//add child to list of other people on same level
-					addToLevel(child, child.level);
+					//sortList comes from parent
+					child.sortList[0] = {'rel': 'child', 'order': i};
 				}
 
-				//add links from family to children
-				data.links.push({
-					"source": family,
-					"target": child,
-					"type": "child"
-				});
+				//add child's family to list to do if it hasn't already been processed
+				if (child.hasOwnProperty("parentIn") && !data.families.hasOwnProperty(child.parentIn)) {
+					familiesToDo.set(child.parentIn, [child.level, [{'rel': 'parent', 'order': 0}].concat(child.sortList)]);
+				}
+
+				//add child to list of all people
+				data.people[child.handle] = child;
+				//add child to list of other people on same level
+				addToLevel(child, child.level);
 			}
-		}
-	}
 
-	//distill sortList into a number representing
-	//the person's lateral distance from the root family in the graph
-	for (var i = 0; i < data.people.length; i++) {
-		var person = data.people[i],
-			sortValue = 0;
+			family.children[i] = child;
 
-		for (var j = 0; j < person.sortList.length; j++) {
-			sortValue += person.sortList[j].order;
+			//add links from family to children
+			data.links.push({
+				"source": family,
+				"target": child,
+				"type": "child"
+			});
 		}
-		person.sortValue = sortValue;
 	}
 
 	//sort people in each level based on lateral location in the graph
 	var sortLevel = function(a, b) {
-		return a.sortValue > b.sortValue;
+		var aLen = a.sortList.length,
+			bLen = b.sortList.length,
+			minLen = Math.min(aLen, bLen);
+
+		//move backwards through the sortLists to find the first branch
+		for (var i = 1; i <= minLen; i++) {
+			var aSort = a.sortList[aLen - i],
+				bSort = b.sortList[bLen - i];
+
+			if (aSort.order !== bSort.order) {
+				return bSort.order - aSort.order;
+			}
+		}
+		throw "Can't sort people!";
 	};
 
-	for (i = 0; i < data.levels.length; i++) {
+	for (var i = 0; i < data.levels.length; i++) {
 		data.levels[i].sort(sortLevel);
 	}
 
 	//assign a starting location to each person
 	for (i = 0; i < data.levels.length; i++) {
 		var length = data.levels[i].length,
-			curLevel = data.levels[i].length;
+			curLevel = data.levels[i];
 
 		for (var j = 0; j < length; j++) {
 			var person = curLevel[j],

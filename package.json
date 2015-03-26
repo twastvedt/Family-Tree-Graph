@@ -8,8 +8,8 @@
     "css:watch": "npm run css -- -w",
     "serve": "http-server -p 9090 ./",
     "js:build": "browserify -d js/src/index.js > js/dist/bundle.js",
-    "js:watch": "watchify js/src/index.js -do js/dist/bundle.js",
-    "dev": "parallelshell \"npm run js:build & npm run js:watch\" \"npm run css:watch\" \"npm run serve\""
+    "js:watch": "watchify -d js/src/index.js -do js/dist/bundle.js",
+    "dev": "parallelshell \"npm run js:watch\" \"npm run css:watch\" \"npm run serve\""
   },
   "author": "Trygve Wastvedt <trygve.wastvedt@gmail.com>",
   "private": true,
@@ -18,8 +18,9 @@
     "d3": "^3.5.5"
   },
   "devDependencies": {
-    "node-sass": "^2.0.1",
+    "node-sass": "latest",
     "parallelshell": "latest",
-    "watchify": "^2.4.0"
+    "watchify": "latest",
+    "browserify": "latest"
   }
 }
