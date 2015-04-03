@@ -290,10 +290,7 @@ var setupGraph = function() {
 	families.append(function(d) { return d.nameSVG; });
 
 	//add text to each person
-	people.append(function(d) { return d.nameSVG; })
-		.attr({
-			'transform': 'translate(0, ' + settings.ringSpacing / 2 + ')'
-		});
+	people.append(function(d) { return d.nameSVG; });
 
 	// path generator for arcs
 	var arc = function(d) {
@@ -319,10 +316,10 @@ var setupGraph = function() {
 			sweep = (dTheta > 0) ? 1 : 0,
 			r = d.level * settings.ringSpacing;
 
-		return "M" + start.rel(family).toString() +
+		return "M" + start.toString() +
 			"A" + r + "," + r + " 0 " +
 			largeArc + "," + sweep + " " +
-			end.rel(family).toString();
+			end.toString();
 	};
 
 	////////
@@ -337,12 +334,17 @@ var setupGraph = function() {
 
 				d.x = newPos[0];
 				d.y = newPos[1];
-			}
+				d.theta = currentPolar[1];
 
-			d3.select(this).select('.name')
-				.attr("transform", function(d) {
-					return "rotate(" + radialAlign([d.x, d.y]) + ")";
+				//move label out to halfway up person line, rotate to stay upright
+				d3.select(this).select('.name').attr('transform', function(d) {
+					var transform = 'translate(0, ' + (d.level + 0.5) * -settings.ringSpacing + ')';
+					if (d.y < 0) {
+						transform += ' rotate(180)';
+					}
+					return transform;
 				});
+			}
 		});
 
 		families.each(function(d) {
@@ -369,8 +371,8 @@ var setupGraph = function() {
 			'd': arc
 		});
 
-		nodes.attr("transform", function(d) {
-			return "translate(" + d.x + "," + d.y + ")";
+		people.attr("transform", function(d) {
+			return "rotate(" + (d.theta * 360 / (2 * Math.PI) - 90) + ")";
 		});
 
 		//can't stop won't stop
