@@ -17,12 +17,73 @@ var d3 = require('d3'),
 	//this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
 	familiesToDo = d3.map();
 
-var toPolar = function(d) {
-	return [Math.sqrt(d[0]*d[0] + d[1]*d[1]), Math.atan2(d[1], d[0])];
+var Pt = function(x, y) {
+	this[0] = x;
+	this[1] = y;
 };
 
-var fromPolar = function(d) {
-	return [Math.cos(d[1]) * d[0], Math.sin(d[1]) * d[0]];
+Pt.prototype.rel = function(origin) {
+	//return point relative to origin
+
+	return new Pt(this[0] - origin[0], this[1] - origin[1]);
+};
+
+var toPolar = function(c) {
+	return new Pt(Math.sqrt(c[0]*c[0] + c[1]*c[1]), Math.atan2(c[1], c[0]));
+};
+Pt.prototype.toPolar = function() { return toPolar(this); };
+
+var fromPolar = function(c) {
+	return new Pt(Math.cos(c[1]) * c[0], Math.sin(c[1]) * c[0]);
+};
+Pt.prototype.fromPolar = function() { return fromPolar(this); };
+
+var radialAlign = function(c) {
+	//rotate object to center, keeping it upright
+
+	var polarPt = toPolar(c),
+		a = polarPt[1] * 360/2/Math.PI;
+
+	if (a > 0) {
+		return a - 90;
+	} else {
+		return a - 270;
+	}
+};
+Pt.prototype.radialAlign = function() { return radialAlign(this); };
+
+var fromLocal = function(c, elem, doc) {
+	//convert local point coordinate to global
+
+	if (typeof doc === 'undefined') {
+		doc = main.node();
+	}
+
+	var offset = doc.getBoundingClientRect(),
+		matrix = elem.getScreenCTM();
+
+	return new Pt((c[0] / matrix.a) + (c[1] / matrix.c) - matrix.e + offset.left,
+		(c[0] / matrix.b) + (c[1] / matrix.d) - matrix.f + offset.top);
+};
+Pt.prototype.fromLocal = function(elem, doc) { return fromLocal(this, elem, doc); };
+
+var toLocal = function(c, elem, doc) {
+	//convert global point coordinate to local
+
+	if (typeof doc === 'undefined') {
+		doc = svg.node();
+	}
+
+	var offset = doc.getBoundingClientRect(),
+		matrix = elem.getScreenCTM();
+
+	return new Pt((matrix.a * c[0]) + (matrix.c * c[1]) + matrix.e - offset.left,
+		(matrix.b * c[0]) + (matrix.d * c[1]) + matrix.f - offset.top);
+};
+Pt.prototype.toLocal = function(elem, doc) { return toLocal(this, elem, doc); };
+
+Pt.prototype.toString = function() {
+	return this[0] + ',' + this[1];
 };
 
 var getPerson = function(handle) {
@@ -30,13 +91,12 @@ var getPerson = function(handle) {
 
 	if (! person.empty()) {
 		var personData = {
-				"gender": person.select('gender').text(),
-				"handle": handle,
-				"type": "person",
-				"sort": [],
-				"surNames": [],
-				"surName": ''
-			};
+			"gender": person.select('gender').text(),
+			"handle": handle,
+			"type": "person",
+			"sort": [],
+			"Pt": function() { return new Pt(this.x, this.y); }
+		};
 
 		if (! person.select('parentin').empty()) {
 			personData.parentIn = person.select('parentin').attr('hlink');
@@ -49,15 +109,24 @@ var getPerson = function(handle) {
 
 		personData.firstName = nameXML.select('first').text();
 
+		var nameSVG = svg.append("text")
+			.remove()
+			.attr('class', 'name');
+
+		nameSVG.append('tspan')
+			.text(personData.firstName)
+			.attr('class', 'first');
+
 		nameXML.selectAll('surname').each(function() {
-			personData.surNames.push({
-				'name': this.innerHTML,
-				'type': this.getAttribute('derivation')
-			});
-			personData.surName += this.innerHTML + ' ';
+			nameSVG.append('tspan')
+				.text(this.innerHTML)
+				.attr({
+					'class': 'last',
+					'type': this.getAttribute('derivation')
+				});
 		});
 
-		personData.surName = personData.surName.slice(0, -1);
+		personData.nameSVG = nameSVG.node();
 
 		return personData;
 
@@ -73,7 +142,8 @@ var getFamily = function(handle) {
 		var familyData = {
 			"handle": handle,
 			"children": [],
-			"type": "family"
+			"type": "family",
+			"Pt": function() { return new Pt(this.x, this.y); }
 		};
 
 		if (! family.select('father').empty()) {
@@ -94,6 +164,25 @@ var getFamily = function(handle) {
 	}
 };
 
+var sortLevel = function(a, b) {
+	//sort people in each level based on lateral location in the graph
+
+	var aLen = a.sortList.length,
+		bLen = b.sortList.length,
+		minLen = Math.min(aLen, bLen);
+
+	//move backwards through the sortLists to find the first branch
+	for (var i = 1; i <= minLen; i++) {
+		var aSort = a.sortList[aLen - i],
+			bSort = b.sortList[bLen - i];
+
+		if (aSort.order !== bSort.order) {
+			return bSort.order - aSort.order;
+		}
+	}
+	throw "Can't sort people!";
+};
+
 var playPause = function() {
 	if (force.alpha() > 0) {
 		force.stop();
@@ -107,7 +196,6 @@ var playPause = function() {
 };
 
 var setupGraph = function() {
-	svg = d3.select("body").append("svg:svg");
 
 	var width = window.innerWidth - 50,
 		height = window.innerHeight - svg.node().getBoundingClientRect().top - 50;
@@ -158,50 +246,111 @@ var setupGraph = function() {
 	//draw tree
 	var links = main.selectAll(".link")
 		.data(data.links)
-		.enter().append("line")
-		.attr({"class": "link",
-			"type": function(d) { return d.type; }
+		.enter().append('line')
+		.attr({
+			"class": function(d) {
+				var c = "link";
+				if (d.hasOwnProperty('type')) {
+					c += ' ' + d.type;
+				}
+				return c;
+			}
 		});
+
+	var parentLinks = links.filter('.parent'),
+		childLinks = links.filter('.child');
 
 	var nodes = main.selectAll(".node")
 		.data(data.nodeList, function(d) { return d.handle; })
 		.enter().append("g")
 		.attr({
-			"class": "node",
+			"class": function(d) {
+				var c = "node";
+				if (d.hasOwnProperty('type')) {
+					c += ' ' + d.type;
+				}
+				if (d.hasOwnProperty('gender')) {
+					c += ' ' + d.gender;
+				}
+				return c;
+			},
 			"id": function(d) { return d.handle; }
-		})
-		.classed('person', function(d) { return d.type === "person"; })
-		.classed('family', function(d) { return d.type === "family"; });
+		});
 
 	var people = main.selectAll(".person");
 	var families = main.selectAll(".family");
 
-	people.append("text")
-		.text(function(d) { return d.firstName; });
+	var familyArcs = families.append('path')
+		.attr({
+			'class': 'familyArc',
+			'id': function(d) { return d.handle + '-arc'; }
+		});
 
-	families.append("text")
-		.text(function(d) { return d.name; });
+	//add text to each family
+	families.append(function(d) { return d.nameSVG; });
+
+	//add text to each person
+	people.append(function(d) { return d.nameSVG; })
+		.attr({
+			'transform': 'translate(0, ' + settings.ringSpacing / 2 + ')'
+		});
+
+	// path generator for arcs
+	var arc = function(d) {
+		var family = d.Pt(),
+			start, end;
+
+		//keep text upright
+		if (family[1] >= 0) {
+			end = d.mother.Pt();
+			start = d.father.Pt();
+		} else {
+			start = d.mother.Pt();
+			end = d.father.Pt();
+		}
+
+		var startP = start.toPolar(),
+			endP = end.toPolar(),
+
+			dTheta = endP[1] - startP[1];
+			dTheta += (dTheta > Math.PI) ? -(Math.PI * 2) : (dTheta <- Math.PI) ? (Math.PI * 2) : 0;
+
+		var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
+			sweep = (dTheta > 0) ? 1 : 0,
+			r = d.level * settings.ringSpacing;
+
+		return "M" + start.rel(family).toString() +
+			"A" + r + "," + r + " 0 " +
+			largeArc + "," + sweep + " " +
+			end.rel(family).toString();
+	};
 
 	////////
 	//events
 	force.on("tick", function() {
-		//lock nodes on correct ring
+
 		people.each(function(d) {
 			if (d.x && d.y) {
+				//lock nodes on correct ring
 				var currentPolar = toPolar([d.x, d.y]),
 					newPos = fromPolar([d.level * settings.ringSpacing, currentPolar[1]]);
 
 				d.x = newPos[0];
 				d.y = newPos[1];
 			}
+
+			d3.select(this).select('.name')
+				.attr("transform", function(d) {
+					return "rotate(" + radialAlign([d.x, d.y]) + ")";
+				});
 		});
 
-		//family node stays between parents
 		families.each(function(d) {
 			if (d.x && d.y && d.father && d.mother) {
+				//family node stays between parents
 				var fatherPolar = toPolar([d.father.x, d.father.y]),
-					motherPolar = toPolar([d.mother.x, d.mother.y]),
-					newPos = fromPolar([fatherPolar[0], (fatherPolar[1] + motherPolar[1])/2]);
+					avgPos = [(d.father.x + d.mother.x)/2, (d.father.y + d.mother.y)/2],
+					newPos = fromPolar([fatherPolar[0], Math.atan2(avgPos[1], avgPos[0])]);
 
 				d.x = newPos[0];
 				d.y = newPos[1];
@@ -209,17 +358,21 @@ var setupGraph = function() {
 		});
 
 		//apply transformations
-		links.attr({"x1": function(d) { return d.source.x; },
-				"y1": function(d) { return d.source.y; },
-				"x2": function(d) { return d.target.x; },
-				"y2": function(d) { return d.target.y; } });
+		childLinks.attr({
+			"x1": function(d) { return d.source.x; },
+			"y1": function(d) { return d.source.y; },
+			"x2": function(d) { return d.target.x; },
+			"y2": function(d) { return d.target.y; }
+		});
 
-		people.attr("transform", function(d) {
+		familyArcs.attr({
+			'd': arc
+		});
+
+		nodes.attr("transform", function(d) {
 			return "translate(" + d.x + "," + d.y + ")";
 		});
-		families.attr("transform", function(d) {
-			return "translate(" + d.x + "," + d.y + ")";
-		});
+
 		//can't stop won't stop
 		force.resume();
 	});
@@ -234,8 +387,6 @@ var setupGraph = function() {
 					return settings.ringSpacing * settings.parentLinkDistance;
 				case "child":
 					return settings.ringSpacing * settings.childLinkDistance;
-				case "spouse":
-					return settings.ringSpacing * settings.parentLinkDistance * 2;
 				default:
 					return 1;
 			}
@@ -243,11 +394,9 @@ var setupGraph = function() {
 		.linkStrength(function(d) {
 			switch (d.type) {
 				case "parent":
-					return 1;
+					return 0;
 				case "child":
-					return 0.2;
-				case "spouse":
-					return 0.5;
+					return 1;
 				default:
 					return 1;
 			}
@@ -314,6 +463,7 @@ var addParent = function(family, spouse, sortList) {
 };
 
 var parseData = function(error, xmlDoc) {
+	svg = d3.select("body").append("svg:svg");
 	xml = d3.select(xmlDoc);
 
 	var rootFamilyHandle = xml.select('family#' + settings.rootFamilyId)
@@ -341,7 +491,25 @@ var parseData = function(error, xmlDoc) {
 		if (family.hasOwnProperty('father')) {
 			addParent(family, 'father', sortList.slice());
 
-			family.name = family.father.surName;
+			family.nameSVG = svg.append("text")
+				.remove()
+				.attr('class', 'name');
+
+			var textPath = family.nameSVG.append("textPath")
+				.attr({
+					'class': 'textPath',
+					'startOffset': '50%',
+					"xlink:href": '#' + family.handle + '-arc'
+				})
+				.node();
+
+			d3.select(family.father.nameSVG.cloneNode(true))
+				.selectAll('*').each(function() {
+					textPath.appendChild(this);
+				});
+
+			//store DOM node not d3 selection
+			family.nameSVG = family.nameSVG.node();
 		}
 
 		if (family.hasOwnProperty('mother')) {
@@ -396,24 +564,6 @@ var parseData = function(error, xmlDoc) {
 			});
 		}
 	}
-
-	//sort people in each level based on lateral location in the graph
-	var sortLevel = function(a, b) {
-		var aLen = a.sortList.length,
-			bLen = b.sortList.length,
-			minLen = Math.min(aLen, bLen);
-
-		//move backwards through the sortLists to find the first branch
-		for (var i = 1; i <= minLen; i++) {
-			var aSort = a.sortList[aLen - i],
-				bSort = b.sortList[bLen - i];
-
-			if (aSort.order !== bSort.order) {
-				return bSort.order - aSort.order;
-			}
-		}
-		throw "Can't sort people!";
-	};
 
 	for (var i = 0; i < data.levels.length; i++) {
 		data.levels[i].sort(sortLevel);

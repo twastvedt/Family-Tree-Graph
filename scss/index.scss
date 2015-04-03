@@ -1,10 +1,13 @@
 .link {
-	stroke: #888;
-	stroke-width: 0.5px;
+	stroke: #555;
+	stroke-width: 1px;
+	fill: none;
+}
 
-	&[type=spouse] {
-		stroke: none;
-	}
+.familyArc {
+	stroke: #555;
+	stroke-width: 1px;
+	fill: none;
 }
 
 circle.level {
@@ -38,4 +41,26 @@ svg {
 .overlay {
   fill: none;
   pointer-events: all;
+}
+
+.node {
+	text-anchor: middle;
+}
+
+
+.family {
+	@extend .node;
+
+	.first {
+		display: none;
+	}
+}
+
+.person {
+	@extend .node;
+
+	[type='Taken'],
+	[type='Inherited'] {
+		display: none;
+	}
 }

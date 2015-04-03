@@ -1,8 +1,12 @@
 .link {
-  stroke: #888;
-  stroke-width: 0.5px; }
-  .link[type=spouse] {
-    stroke: none; }
+  stroke: #555;
+  stroke-width: 1px;
+  fill: none; }
+
+.familyArc {
+  stroke: #555;
+  stroke-width: 1px;
+  fill: none; }
 
 circle.level {
   stroke: #bbb;
@@ -29,5 +33,14 @@ svg {
 .overlay {
   fill: none;
   pointer-events: all; }
+
+.node, .family, .person {
+  text-anchor: middle; }
+
+.family .first {
+  display: none; }
+
+.person [type='Taken'], .person [type='Inherited'] {
+  display: none; }
 
 /*# sourceMappingURL=index.css.map */

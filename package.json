@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "css": "node-sass --source-map css/index.css.map -o css scss/index.scss css/index.css",
-    "css:watch": "npm run css -- -w",
+    "css:watch": "npm run css & npm run css -- -w scss/index.scss",
     "serve": "http-server -p 9090 ./",
     "js:build": "browserify -d js/src/index.js > js/dist/bundle.js",
-    "js:watch": "watchify -d js/src/index.js -do js/dist/bundle.js",
+    "js:watch": "watchify -d js/src/index.js -do js/dist/bundle.js -v",
     "dev": "parallelshell \"npm run js:watch\" \"npm run css:watch\" \"npm run serve\""
   },
   "author": "Trygve Wastvedt <trygve.wastvedt@gmail.com>",
