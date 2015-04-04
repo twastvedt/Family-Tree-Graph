@@ -1,4 +1,5 @@
 /* global require */
+/* global console */
 
 'use strict';
 
@@ -12,7 +13,9 @@ var d3 = require('d3'),
 		"families": {},
 		"links": [],
 		"levels": [],
-		"maxLevel": 0
+		"maxLevel": 0,
+		"dateRange": [],
+		"levelAvg": []
 	},
 	//this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
 	familiesToDo = d3.map();
@@ -86,6 +89,20 @@ Pt.prototype.toString = function() {
 	return this[0] + ',' + this[1];
 };
 
+var addToDateRange = function(d) {
+	if (data.dateRange[0]) {
+		data.dateRange[0] = new Date(Math.min(data.dateRange[0], d));
+	} else {
+		data.dateRange[0] = d;
+	}
+
+	if (data.dateRange[1]) {
+		data.dateRange[1] = new Date(Math.max(data.dateRange[1], d));
+	} else {
+		data.dateRange[1] = d;
+	}
+};
+
 var getPerson = function(handle) {
 	var person = xml.select('person[handle=' + handle + ']');
 
@@ -103,6 +120,30 @@ var getPerson = function(handle) {
 		}
 		if (! person.select('childof').empty()) {
 			personData.childOf = person.select('childof').attr('hlink');
+		}
+
+		person.selectAll('eventref').each(function() {
+			var e = xml.select('event[handle=' + this.getAttribute('hlink') + ']');
+
+			if (! e.empty()) {
+				switch (e.select('type').text()) {
+					case 'Birth':
+						personData.birth = new Date(e.select('dateval').attr('val'));
+						addToDateRange(personData.birth);
+						break;
+					case 'Death':
+						personData.death = new Date(e.select('dateval').attr('val'));
+						addToDateRange(personData.death);
+						break;
+					default:
+						console.log(e.select('type').text());
+				}
+			}
+		});
+
+		if (personData.hasOwnProperty('birth') && ! personData.hasOwnProperty('death')) {
+			//person still living
+			data.dateRange[1] = new Date();
 		}
 
 		var nameXML = person.select('name');
@@ -152,6 +193,21 @@ var getFamily = function(handle) {
 		if (! family.select('mother').empty()) {
 			familyData.mother = family.select('mother').attr('hlink');
 		}
+
+		family.selectAll('eventref').each(function() {
+			var e = xml.select('event[handle=' + this.getAttribute('hlink') + ']');
+
+			if (! e.empty()) {
+				switch (e.select('type').text()) {
+					case 'Marriage':
+						familyData.marriage = new Date(e.select('dateval').attr('val'));
+						addToDateRange(familyData.marriage);
+						break;
+					default:
+						console.log(e.select('type').text());
+				}
+			}
+		});
 
 		family.selectAll('childref').each(function() {
 			familyData.children.push(this.getAttribute('hlink'));
@@ -291,6 +347,17 @@ var setupGraph = function() {
 
 	//add text to each person
 	people.append(function(d) { return d.nameSVG; });
+
+	//add person line for people with no parent
+	people.filter(function(d) { return !d.hasOwnProperty('childOf'); })
+		.append('line')
+			.attr({
+				'class': 'link tail',
+				'x1': 0,
+				'y1': function(d) { return settings.ringSpacing * d.level; },
+				'x2': 0,
+				'y2': function(d) { return settings.ringSpacing * (d.level + 0.5); }
+			});
 
 	// path generator for arcs
 	var arc = function(d) {
@@ -513,16 +580,17 @@ var parseData = function(error, xmlDoc) {
 			//store DOM node not d3 selection
 			family.nameSVG = family.nameSVG.node();
 		}
-
 		if (family.hasOwnProperty('mother')) {
 			addParent(family, 'mother', sortList.slice());
 		}
 
+		//store data for each child of family
 		for (var i = 0; i < family.children.length; i++) {
 			var childId = family.children[i],
 				child;
 
 			if (data.people.hasOwnProperty(childId)) {
+				//child has already been recorded
 				child = data.people[childId];
 			} else {
 				//create child object and add to list of people
@@ -569,6 +637,9 @@ var parseData = function(error, xmlDoc) {
 
 	for (var i = 0; i < data.levels.length; i++) {
 		data.levels[i].sort(sortLevel);
+
+		//for people without dates, define a default (average) level date
+		data.levelAvg[i] = new Date(d3.mean(data.levels[i], function(el) { return el.birth; }));
 	}
 
 	//assign a starting location to each person
