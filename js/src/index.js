@@ -6,7 +6,7 @@
 var d3 = require('d3'),
 	settings = require('./settings.json'),
 
-	xml, svg, force,
+	xml, svg, force, scale,
 
 	data = {
 		"people": {},
@@ -19,6 +19,11 @@ var d3 = require('d3'),
 	},
 	//this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
 	familiesToDo = d3.map();
+
+
+////
+//Pt
+// A small class to hold two dimensional point arrays
 
 var Pt = function(x, y) {
 	this[0] = x;
@@ -251,6 +256,63 @@ var playPause = function() {
 	}
 };
 
+var addToLevel = function(person, level) {
+	//make sure the list for this level exists before adding a person to it
+
+	if (typeof data.levels[level] === 'undefined') {
+		data.levels[level] = [];
+	}
+	data.levels[level].push(person);
+};
+
+var addParent = function(family, spouse, sortList) {
+	//spouse === 'father'||'mother'
+
+	var parent;
+
+	if (!data.people.hasOwnProperty(family[spouse])) {
+		//parent not already processed
+
+		//create object for parent and add to list of people
+		parent = getPerson(family[spouse]);
+
+		parent.level = family.level;
+		parent.sortList = sortList;
+
+		if (sortList[0].rel === 'child') {
+			//sortList comes from child
+			parent.sortList[0] = {'rel': 'parent'};
+		} else {
+			//sortList comes from other parent
+			parent.sortList[0] = {'rel': 'spouse'};
+		}
+		//father defaults to left side of marriage in graph, mother to right
+		parent.sortList[0].order = (spouse === 'father' ? -1 : 1);
+
+		data.people[parent.handle] = parent;
+
+		addToLevel(parent, parent.level);
+
+		//add parent's family to list to do if it hasn't already been processed
+		if (parent.hasOwnProperty("childOf") && !data.families.hasOwnProperty(parent.childOf)) {
+			familiesToDo.set(parent.childOf, [parent.level + 1, [{'rel': 'child', 'order': 0}].concat(parent.sortList)]);
+		}
+	} else {
+		//link to already processed person object
+		parent = data.people[family[spouse]];
+	}
+
+	//replace id with object
+	family[spouse] = parent;
+
+	//add link from father to family
+	data.links.push({
+		"source": parent,
+		"target": family,
+		"type": "parent"
+	});
+};
+
 var setupGraph = function() {
 
 	var width = window.innerWidth - 50,
@@ -271,14 +333,12 @@ var setupGraph = function() {
 		.nodes(data.nodeList)
 		.links(data.links);
 
-	var zoom = function() {
-		main.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-	};
-
 	var main = svg.append("g")
 				.attr({"transform": "translate(" + width / 2 + "," + height / 2 + ")"})
-				.call(d3.behavior.zoom().scaleExtent([0.5, 8]).on("zoom", zoom))
-					.append("g");
+				.call(d3.behavior.zoom().scaleExtent([0.5, 8]).on("zoom", function() {
+					main.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+				}))
+				.append("g");
 
 	main.append("rect")
 		.attr({"transform": "translate(" + (-width / 2) + "," + (-height / 2) + ")",
@@ -292,10 +352,25 @@ var setupGraph = function() {
 	var grid = main.append("g")
 		.attr({"class": "grid"});
 
-	for (var i = 1; i <= data.maxLevel; i++) {
-		grid.append("circle")
-			.attr({"class": "level",
-				"r": i * settings.ringSpacing});
+	var ticks = scale.ticks(data.maxLevel);
+
+	for (var i = 0; i < ticks.length; i++) {
+		var r = scale(ticks[i]);
+		grid.append("path")
+				.attr({
+					"class": "level",
+					"d": "M" + r + ",0A" + r + "," + r + " 0 0,1 -" + r + ",0A" + r + "," + r + " 0 0,1 " + r + ",0",
+					"id": 'level-' + i
+				});
+
+		grid.append("text")
+				.attr('class', 'label')
+			.append("textPath")
+				.attr({
+					'startOffset': '75%',
+					"xlink:href": '#level-' + i
+				})
+				.text((new Date(ticks[i])).getFullYear());
 	}
 
 	///////////
@@ -359,6 +434,16 @@ var setupGraph = function() {
 				'y2': function(d) { return settings.ringSpacing * (d.level + 0.5); }
 			});
 
+	//add life lines to people
+	people.append('line')
+		.attr({
+			'class': 'lifeLine',
+			'x1': 0,
+			'y1': function(d) { return scale(d.birth); },
+			'x2': 0,
+			'y2': function(d) { return scale(d.death); }
+		});
+
 	// path generator for arcs
 	var arc = function(d) {
 		var family = d.Pt(),
@@ -401,11 +486,11 @@ var setupGraph = function() {
 
 				d.x = newPos[0];
 				d.y = newPos[1];
-				d.theta = currentPolar[1];
+				d.polar = currentPolar;
 
 				//move label out to halfway up person line, rotate to stay upright
 				d3.select(this).select('.name').attr('transform', function(d) {
-					var transform = 'translate(0, ' + (d.level + 0.5) * -settings.ringSpacing + ')';
+					var transform = 'translate(0, ' + (d.level + 0.5) * settings.ringSpacing + ')';
 					if (d.y < 0) {
 						transform += ' rotate(180)';
 					}
@@ -419,17 +504,21 @@ var setupGraph = function() {
 				//family node stays between parents
 				var fatherPolar = toPolar([d.father.x, d.father.y]),
 					avgPos = [(d.father.x + d.mother.x)/2, (d.father.y + d.mother.y)/2],
-					newPos = fromPolar([fatherPolar[0], Math.atan2(avgPos[1], avgPos[0])]);
+					currentPolar = new Pt(fatherPolar[0], Math.atan2(avgPos[1], avgPos[0])),
+					newPos = fromPolar(currentPolar);
 
 				d.x = newPos[0];
 				d.y = newPos[1];
+				d.polar = currentPolar;
 			}
 		});
 
 		//apply transformations
 		childLinks.attr({
-			"x1": function(d) { return d.source.x; },
-			"y1": function(d) { return d.source.y; },
+			"x1": function(d) {
+				return fromPolar([d.source.polar[0], d.target.polar[1]])[0];
+			},
+			"y1": function(d) { return fromPolar([d.source.polar[0], d.target.polar[1]])[1]; },
 			"x2": function(d) { return d.target.x; },
 			"y2": function(d) { return d.target.y; }
 		});
@@ -439,7 +528,7 @@ var setupGraph = function() {
 		});
 
 		people.attr("transform", function(d) {
-			return "rotate(" + (d.theta * 360 / (2 * Math.PI) - 90) + ")";
+			return "rotate(" + (d.polar[1] * 360 / (2 * Math.PI) - 90) + ")";
 		});
 
 		//can't stop won't stop
@@ -472,63 +561,6 @@ var setupGraph = function() {
 		});
 
 	force.start();
-};
-
-var addToLevel = function(person, level) {
-	//make sure the list for this level exists before adding a person to it
-
-	if (typeof data.levels[level] === 'undefined') {
-		data.levels[level] = [];
-	}
-	data.levels[level].push(person);
-};
-
-var addParent = function(family, spouse, sortList) {
-	//spouse === 'father'||'mother'
-
-	var parent;
-
-	if (!data.people.hasOwnProperty(family[spouse])) {
-		//parent not already processed
-
-		//create object for parent and add to list of people
-		parent = getPerson(family[spouse]);
-
-		parent.level = family.level;
-		parent.sortList = sortList;
-
-		if (sortList[0].rel === 'child') {
-			//sortList comes from child
-			parent.sortList[0] = {'rel': 'parent'};
-		} else {
-			//sortList comes from other parent
-			parent.sortList[0] = {'rel': 'spouse'};
-		}
-		//father defaults to left side of marriage in graph, mother to right
-		parent.sortList[0].order = (spouse === 'father' ? -1 : 1);
-
-		data.people[parent.handle] = parent;
-
-		addToLevel(parent, parent.level);
-
-		//add parent's family to list to do if it hasn't already been processed
-		if (parent.hasOwnProperty("childOf") && !data.families.hasOwnProperty(parent.childOf)) {
-			familiesToDo.set(parent.childOf, [parent.level + 1, [{'rel': 'child', 'order': 0}].concat(parent.sortList)]);
-		}
-	} else {
-		//link to already processed person object
-		parent = data.people[family[spouse]];
-	}
-
-	//replace id with object
-	family[spouse] = parent;
-
-	//add link from father to family
-	data.links.push({
-		"source": parent,
-		"target": family,
-		"type": "parent"
-	});
 };
 
 var parseData = function(error, xmlDoc) {
@@ -641,6 +673,10 @@ var parseData = function(error, xmlDoc) {
 		//for people without dates, define a default (average) level date
 		data.levelAvg[i] = new Date(d3.mean(data.levels[i], function(el) { return el.birth; }));
 	}
+
+	scale = d3.time.scale()
+		.domain(data.dateRange)
+		.range([settings.width / 2, 0]);
 
 	//assign a starting location to each person
 	for (i = 0; i < data.levels.length; i++) {

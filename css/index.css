@@ -1,17 +1,28 @@
+svg {
+  font-size: 14px; }
+
+.label {
+  font-size: 75%; }
+
+path, circle {
+  fill: none;
+  stroke-width: 1px; }
+
 .link {
-  stroke: #555;
-  stroke-width: 1px;
-  fill: none; }
+  stroke: #555; }
+
+.lifeLine {
+  stroke: blue; }
 
 .familyArc {
-  stroke: #555;
-  stroke-width: 1px;
-  fill: none; }
+  stroke: #555; }
 
-circle.level {
+path.level {
   stroke: #bbb;
-  stroke-width: 0.5px;
-  fill: none; }
+  stroke-width: 0.5px; }
+
+.label {
+  text-anchor: middle; }
 
 button {
   width: 100px;

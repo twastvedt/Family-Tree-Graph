@@ -5,6 +5,9 @@
 	//distance between generations
 	"ringSpacing": 75,
 
+	//diameter of circle graph, in pixels(?)
+	"width": 1000,
+
 	//maximum change in node position per tick due to any single force
 	"constraintStrength": 0.2,
 
