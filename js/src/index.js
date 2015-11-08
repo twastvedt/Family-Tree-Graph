@@ -108,6 +108,7 @@ var addToDateRange = function(d) {
 	}
 };
 
+//Get all data from the xml related to one person
 var getPerson = function(handle) {
 	var person = xml.select('person[handle=' + handle + ']');
 
@@ -181,6 +182,7 @@ var getPerson = function(handle) {
 	}
 };
 
+//Get all data from the xml for one family (marriage and kids)
 var getFamily = function(handle) {
 	var family = xml.select('[handle=' + handle + ']');
 
@@ -225,8 +227,8 @@ var getFamily = function(handle) {
 	}
 };
 
+//Sort people in each level based on lateral location in the graph
 var sortLevel = function(a, b) {
-	//sort people in each level based on lateral location in the graph
 
 	var aLen = a.sortList.length,
 		bLen = b.sortList.length,
@@ -256,15 +258,17 @@ var playPause = function() {
 	}
 };
 
+//Add a person to a level of the graph
 var addToLevel = function(person, level) {
-	//make sure the list for this level exists before adding a person to it
 
+	//make sure the list for this level exists before adding a person to it
 	if (typeof data.levels[level] === 'undefined') {
 		data.levels[level] = [];
 	}
 	data.levels[level].push(person);
 };
 
+//Add a parent to a family
 var addParent = function(family, spouse, sortList) {
 	//spouse === 'father'||'mother'
 
@@ -499,9 +503,9 @@ var setupGraph = function() {
 			}
 		});
 
+		//Keep family node between parents
 		families.each(function(d) {
 			if (d.x && d.y && d.father && d.mother) {
-				//family node stays between parents
 				var fatherPolar = toPolar([d.father.x, d.father.y]),
 					avgPos = [(d.father.x + d.mother.x)/2, (d.father.y + d.mother.y)/2],
 					currentPolar = new Pt(fatherPolar[0], Math.atan2(avgPos[1], avgPos[0])),
@@ -513,7 +517,7 @@ var setupGraph = function() {
 			}
 		});
 
-		//apply transformations
+		//Apply transformations
 		childLinks.attr({
 			"x1": function(d) {
 				return fromPolar([d.source.polar[0], d.target.polar[1]])[0];
@@ -699,6 +703,5 @@ var parseData = function(error, xmlDoc) {
 
 	setupGraph();
 };
-
 
 d3.xml('data/family-tree.xml', parseData);
