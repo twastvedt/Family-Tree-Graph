@@ -20,6 +20,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>ExtendedDesignGuidelineRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>pdbonly</DebugType>
@@ -41,20 +43,28 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
-    <Content Include="css\index.css" />
+    <Content Include="dist\css\index.css" />
     <Content Include="data\family-tree.xml" />
-    <Content Include="index.html" />
-    <Content Include="js\dist\bundle.js" />
-    <Content Include="js\graph.js" />
-    <Content Include="js\src\index.js" />
+    <Content Include="dist\index.html" />
+    <Content Include="src\html\index.html" />
+    <Content Include="dist\bundle.js" />
+    <TypeScriptCompile Include="src\ts\Data.ts" />
+    <TypeScriptCompile Include="src\ts\Pt.ts" />
+    <TypeScriptCompile Include="src\ts\settings.ts" />
+    <TypeScriptCompile Include="src\ts\main.ts" />
+    <TypeScriptCompile Include="src\ts\TreeNode.ts" />
+    <TypeScriptCompile Include="src\typings\custom.d.ts" />
+    <TypeScriptCompile Include="src\typings\d3\d3.d.ts" />
+    <TypeScriptCompile Include="src\typings\tsd.d.ts" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="bower.json" />
-    <None Include="css\index.css.map" />
-    <None Include="js\src\settings.json" />
+    <None Include="dist\css\index.css.map" />
+    <None Include="src\ts\settings.json" />
     <None Include="package.json" />
-    <None Include="scss\.scss-lint.yml" />
-    <None Include="scss\index.scss" />
+    <None Include="src\scss\.scss-lint.yml" />
+    <None Include="src\scss\index.scss" />
+    <None Include="tsconfig.json" />
+    <None Include="tsd.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>

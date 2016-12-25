@@ -1,0 +1,5 @@
+To Do:
+
+Change default locations to level date averages
+
+Use parsed event dates to place nodes

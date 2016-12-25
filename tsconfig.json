@@ -1,0 +1,16 @@
+﻿{
+  "compilerOptions": {
+    "sourceMap": true,
+    "removeComments": true,
+    "module": "commonjs",
+	"moduleResolution": "node",
+    "target": "es5",
+    "out": "tsc.js",
+    "noImplicitAny": true
+  },
+  "files": [
+    "typings/main.d.ts",
+	  "typings/custom.d.ts",
+    "src/ts/main.ts"
+  ]
+}

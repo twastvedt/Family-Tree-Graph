@@ -7,25 +7,30 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "d3": "^3.5.6"
+    "d3": "3.x"
   },
   "devDependencies": {
-    "node-sass": "latest",
-    "parallelshell": "latest",
-    "watchify": "latest",
     "browserify": "latest",
-    "live-reload": "latest"
+    "live-reload": "latest",
+    "mousetrap": "^1.6.0",
+    "node-sass": "^3.13.0",
+    "parallelshell": "latest",
+    "tsify": "^2.0.3",
+    "typescript": "^2.0.10",
+    "watch": "^1.0.1",
+    "watchify": "latest"
   },
   "scripts": {
-    "css": "node-sass --source-map css/index.css.map -o css scss/index.scss css/index.css",
-    "css:watch": "npm run css & npm run css -- -w scss/index.scss",
-    
-    "serve": "http-server -p 9092 ./",
-    "livereload": "live-reload --port 9093 dist/",
-    
-    "js:build": "browserify -d js/src/index.js > js/dist/bundle.js",
-    "js:watch": "watchify -d js/src/index.js -do js/dist/bundle.js -v",
-
-    "dev": "parallelshell \"npm run js:watch\" \"npm run css:watch\" \"npm run livereload\" \"npm run serve\""
+    "ts": "browserify src/ts/main.ts typings/main.d.ts typings/custom.d.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js",
+    "watch-ts": "watchify src/ts/main.ts typings/main.d.ts typings/custom.d.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js -v",
+    "post-build": "copy-assets",
+    "copy-assets": "cp -r src/html/. dist/",
+    "watch-assets": "watch \"npm run copy-assets\" src/html",
+    "css": "node-sass --source-map dist/css/index.css.map -o css src/scss/index.scss dist/css/index.css",
+    "watch-css": "npm run css & npm run css -- -w src/scss/index.scss",
+    "serve": "parallelshell \"http-server -p 9092 ./dist\" \"c:/PROGRA~2/Google/Chrome/Application/chrome.exe http://localhost:9092/ --remote-debugging-port=9222\"",
+    "livereload": "live-reload ./dist/ --port 9093",
+    "watch": "parallelshell \"npm run watch-assets\" \"npm run watch-ts\" \"npm run watch-css\"",
+    "dev": "parallelshell \"npm run watch\" \"npm run livereload\" \"npm run serve\""
   }
 }

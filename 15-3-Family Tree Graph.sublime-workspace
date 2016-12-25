@@ -1,0 +1,774 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"strok",
+				"stroke-width"
+			],
+			[
+				"ring",
+				"ringSpacing"
+			],
+			[
+				"families",
+				"familiesToDo〔variable〕"
+			],
+			[
+				"familie",
+				"familiesToDo〔variable〕"
+			],
+			[
+				"rootFam",
+				"rootFamilyHandle"
+			],
+			[
+				"rootF",
+				"rootFamilyID〔variable〕"
+			],
+			[
+				"apply",
+				"applyTagFilter"
+			],
+			[
+				"visi",
+				"visibleTiles"
+			],
+			[
+				"for",
+				"foreach	foreach …"
+			],
+			[
+				"each",
+				"each	.each()"
+			],
+			[
+				"touchst",
+				"touchstartTile"
+			],
+			[
+				"transl",
+				"translate"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "todo.txt",
+			"settings":
+			{
+				"buffer_size": 94,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "Package Control Messages\n========================\n\nMaterial Theme\n--------------\n\n  Material Theme for Sublime Text 3\n  https://github.com/equinusocio/material-theme\n  \n  \n  Version 1.9.8\n  ********************************************************************************\n  \n  #### UI THEME\n  \n    - Minor UI bugfix\n  \n  #### COLOR SCHEME\n  \n    - Add selection border\n    - Improve markdown highlight\n    - Improve general system highlight\n    - Restored old and UNSUPPORTED color schemes with red variables.\n\n  Material Theme for Sublime Text 3\n  https://github.com/equinusocio/material-theme\n  \n  \n  Version 1.9.7\n  ********************************************************************************\n  \n  #### UI THEME\n  \n    - New tab animation on tab hover\n    - Update JSP file icon\n    - Add stata file icon\n    - Update project tree spacing and assets\n    - Tooltip now match the active accent color\n    - Add some hover transitions on tabset controllers\n  \n  #### COLOR SCHEME\n  \n    - Fix variables color. Thanks to @alexbeletsky\n    - Improve babel JS color highlight.\n    - Improve general highlighting color. Thanks to @alexbeletsky\n",
+			"settings":
+			{
+				"buffer_size": 1142,
+				"line_ending": "Windows",
+				"name": "Package Control Messages",
+				"read_only": true,
+				"scratch": true
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 400.0,
+		"last_filter": "types",
+		"selected_items":
+		[
+			[
+				"types",
+				"TypeScript: Show Error List"
+			],
+			[
+				"vmen",
+				"View: Toggle Menu"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"tab",
+				"Indentation: Convert to Tabs"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"pack",
+				"Package Control: Enable Package"
+			],
+			[
+				"g",
+				"Grunt"
+			],
+			[
+				"grun",
+				"Grunt: Kill Running Tasks"
+			],
+			[
+				"grunt",
+				"Grunt: Kill Running Tasks"
+			],
+			[
+				"gru",
+				"Grunt: Kill Running Tasks"
+			],
+			[
+				"gr",
+				"Grunt"
+			],
+			[
+				"Package Control: ",
+				"Package Control: Disable Package"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"git",
+				"Git: Status"
+			],
+			[
+				"sublimegit",
+				"Set Syntax: SublimeGit Status"
+			],
+			[
+				"rem",
+				"Package Control: Remove Package"
+			],
+			[
+				"Package Control: lis",
+				"Package Control: List Packages"
+			],
+			[
+				"scop",
+				"Toggle ScopeAlways"
+			],
+			[
+				"scope",
+				"Toggle ScopeAlways"
+			],
+			[
+				"log",
+				"Git: Log"
+			],
+			[
+				"form",
+				"Format Code"
+			],
+			[
+				"user",
+				"Preferences: Settings - User"
+			],
+			[
+				"settings",
+				"Preferences: Settings - Default"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"resour",
+				"PackageResourceViewer: Open Resource"
+			],
+			[
+				"resource",
+				"PackageResourceViewer: Open Resource"
+			],
+			[
+				"comment",
+				"Snippet: Comment - Section header comment"
+			],
+			[
+				"Snippet: comment",
+				"Snippet: Comment - Block style comment"
+			],
+			[
+				"web",
+				"Set Syntax: Web Inspector (Stack)"
+			],
+			[
+				"package control",
+				"Package Control: Remove Package"
+			],
+			[
+				"gitadd",
+				"Git: Quick Add"
+			],
+			[
+				"gitstat",
+				"Git: Status"
+			],
+			[
+				"gitstatus",
+				"Git: Status"
+			],
+			[
+				"redef",
+				"Keymap Redefiner: Define Keymap"
+			],
+			[
+				"key",
+				"FindKeyConflicts: All Key Maps to Buffer"
+			],
+			[
+				"find",
+				"FindKeyConflicts: All Conflicts"
+			]
+		],
+		"width": 424.0
+	},
+	"console":
+	{
+		"height": 209.0,
+		"history":
+		[
+			"import urllib.request,os; pr='Preferences.sublime-settings'; ip='ignored_packages'; n='Package Control'; s=sublime.load_settings(pr); ig=s.get(ip); ig.append(n); s.set(ip,ig); sublime.save_settings('Preferences.sublime-settings'); pf=n+'.sublime-package'; urllib.request.install_opener(urllib.request.build_opener(urllib.request.ProxyHandler())); by=urllib.request.urlopen('https://packagecontrol.io/'+pf.replace(' ','%20')).read(); open(os.path.join(sublime.installed_packages_path(),pf),'wb').write(by); ig.remove(n); s.set(ip,ig); sublime.save_settings(pr); print('Package Control: 3.0.0 upgrade successful!')",
+			"swi_debug",
+			"hash -r",
+			"which linter",
+			"import urllib.request,os,hashlib; h = '7183a2d3e96f11eeadd761d777e62404e330c659d4bb41d3bdf022e94cab3cd0'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph"
+	],
+	"file_history":
+	[
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/package.json",
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/src/ts/index.ts",
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/src/ts/parse.ts",
+		"/C/Users/twastvedt/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/C/Users/twastvedt/AppData/Roaming/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/js/src/settings.json",
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/index.html",
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/scss/index.scss",
+		"/C/Users/twastvedt/Documents/Personal/Projects/15-3-Family Tree Graph/www/js/src/index.js",
+		"/D/Projects/15-3-Family Tree Graph/www/node_modules/watchify/node_modules/browserify/node_modules/crypto-browserify/node_modules/public-encrypt/node_modules/parse-asn1/coverage/lcov-report/prettify.css",
+		"/D/Projects/15-3-Family Tree Graph/www/js/settings.json",
+		"/D/Projects/14-2-TaskCoach_graphs/www/graph.js",
+		"/D/Projects/15-3-Family Tree Graph/www/data/family-tree.gramps",
+		"/D/Projects/15-3-Family Tree Graph/www/js/graph.js",
+		"/D/Projects/15-3-Family Tree Graph/www/.gitignore",
+		"/D/Projects/15-3-Family Tree Graph/www/bower.json",
+		"/D/Projects/15-3-Family Tree Graph/www/node_modules/watchify/node_modules/browserify/test/crypto_ig.js",
+		"/D/Projects/15-3-Family Tree Graph/www/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/lexical-scope/test/try_catch.js",
+		"/D/Projects/15-3-Family Tree Graph/www/node_modules/node-sass/src/libsass/script/tap-runner",
+		"/D/Projects/15-3-Family Tree Graph/www/node_modules/jquery/src/traversing.js",
+		"/D/Projects/15-3-Family Tree Graph/www/js/index.js",
+		"/C/Users/wastvedt/Desktop/theme-temp",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/User/Monokai Extended - wastvedt (SL).tmTheme",
+		"/D/Projects/15-3-Family Tree Graph/www/node_modules/d3/package.json",
+		"/D/Projects/15-3-Family Tree Graph/www/nv.d3.js",
+		"/D/Documents/MIT/7.Thesis/presentations/html5/hotspots/custom/js/viewer.js",
+		"/D/Documents/MIT/7.Thesis/presentations/html5/hotspots/custom/js/VRLink.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/single-tw_project.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/loop-tiles.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/library/extra.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/library/enqueue-scripts.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-config.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/other/dist/init-foundation.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/archive.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/node_modules/node-sass/src/libsass/configure.ac",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/node_modules/grunt/lib/grunt/config.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/config.rb",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/other/dist/gridTiles.min.js.map",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/other/dist/tiles.min.js.map",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/page.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/grid.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/tiles.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/other/src/development.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/app.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/package.json",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/dest",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/workflow.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/header.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/content-none.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-includes/class-oembed.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/comments.php",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/User/Default (Windows).sublime-keymap",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/init-foundation.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/front-page.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/footer-tiles.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/bower_components/foundation/scss/foundation.scss",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/library/foundation.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/Gruntfile.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/content.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/js/loadPortfolioSlider.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/header-tiles.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/.scss-lint.yml",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/User/bh_core.sublime-settings",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/User/SublimeLinter.sublime-settings",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/searchform.php",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/Clickable URLs/Default (Windows).sublime-keymap",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/assets/icons/svg-defs-demo.html",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/assets/icons/svg-icons-demo.html",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/search.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/footer.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/.git/hooks/post-merge",
+		"/D/Projects/100_11-10-trygvewastvedt/www/.git/hooks/pre-commit",
+		"/C/Users/wastvedt/Desktop/pre-commit--live",
+		"/C/Users/wastvedt/Desktop/post-merge--live",
+		"/D/Projects/100_11-10-trygvewastvedt/www/.git/info/exclude",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/.gitignore",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/SublimeLinter/SublimeLinter.sublime-settings",
+		"/C/Users/wastvedt/Downloads/pym.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-admin/theme-install.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/test.php",
+		"/D/Projects/.jshintrc",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/bower_components/foundation/scss/foundation/components/_grid.scss",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/scss/config/_settings.scss",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/single.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/style.css",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/scss/app.scss",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/css/app.css",
+		"/C/Users/wastvedt/AppData/Local/Temp/Temp1_Akkurat Italic.zip/readme.html",
+		"/C/Program Files (x86)/Git/doc/git/html/git-revert.html",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/node_modules/grunt-bower-install-simple/node_modules/bower/lib/core/resolvers/GitResolver.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/node_modules/grunt-bower-install-simple/node_modules/bower/node_modules/mout/random/guid.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/.htaccess",
+		"/C/Program Files/Chaos Group/V-Ray/3dsmax 2015 for x64/docs/index.html",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/loop-tiles.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/header-tiles.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/header.php",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/scripts/grid.js",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/scripts/tiles.js",
+		"/D/Projects/100_11-10-trygvewastvedt/original.sublime-workspace",
+		"/D/Projects/100_11-10-trygvewastvedt/trygvewastvedt.sublime-workspace",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/twentyten/functions.php",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/SublimeGit/Default.sublime-keymap",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/foundationPress/node_modules/grunt-svgstore/test/fixtures/github.svg",
+		"/D/Projects/100_11-10-trygvewastvedt/www/wq/save/game-info",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/User/SublimeGit.sublime-settings",
+		"/C/Users/wastvedt/AppData/Roaming/Sublime Text 3/Packages/SublimeGit/SublimeGit.sublime-settings",
+		"/home/wastvedt/shared/App_Data/Sublime/User/Monokai Extended - wastvedt (SL).tmTheme",
+		"/home/wastvedt/.config/sublime-text-3/Packages/User/Preferences.sublime-settings",
+		"/home/wastvedt/.config/sublime-text-3/Packages/User/bh_core.sublime-settings",
+		"/home/wastvedt/.config/sublime-text-3/Packages/BracketHighlighter/Example.sublime-keymap",
+		"/home/wastvedt/.config/sublime-text-3/Packages/BracketHighlighter/bh_core.sublime-settings",
+		"/home/wastvedt/.config/sublime-text-3/Packages/User/Monokai Extended - wastvedt (SL).tmTheme",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/plugins/nextgen-gallery/products/photocrati_nextgen/modules/nextgen_basic_imagebrowser/hook.nextgen_basic_imagebrowser_alt_urls.php",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/plugins/nextgen-gallery/products/photocrati_nextgen/modules/nextgen_basic_gallery/hook.nextgen_basic_gallery_integration.php",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/plugins/nextgen-gallery/products/photocrati_nextgen/modules/nextgen_other_options/adapter.watermarking_ajax_actions.php",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/plugins/nextgen-gallery/products/photocrati_nextgen/modules/nextgen_other_options/module.nextgen_other_options.php",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/plugins/nextgen-gallery/products/photocrati_nextgen/modules/ngglegacy/module.ngglegacy.php",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-admin/ms-options.php",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-admin/media.php",
+		"/home/wastvedt/.config/sublime-text-3/Packages/User/SublimeLinter.sublime-settings",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/scripts/index.js",
+		"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt/header-tiles.php",
+		"/home/wastvedt/.config/sublime-text-3/Packages/FindKeyConflicts/FindKeyConflicts.sublime-settings",
+		"/home/wastvedt/.config/sublime-text-3/Packages/User/custom.YAML-tmLanguage",
+		"/home/wastvedt/shared/Projects/.jshintrc",
+		"/home/wastvedt/.config/sublime-text-3/Packages/User/CodeFormatter.sublime-settings",
+		"/home/wastvedt/.config/sublime-text-3/Packages/BufferScroll/BufferScroll.sublime-settings"
+	],
+	"find":
+	{
+		"height": 26.0
+	},
+	"find_in_files":
+	{
+		"height": 93.0,
+		"where_history":
+		[
+			"D:\\Projects\\100_11-10-trygvewastvedt\\www\\wp\\wp-content\\themes\\foundationPress",
+			"D:\\Projects\\100_11-10-trygvewastvedt\\www\\wp\\wp-content",
+			"D:\\Projects\\100_11-10-trygvewastvedt\\www\\wp\\wp-includes",
+			"D:\\Projects\\100_11-10-trygvewastvedt\\www\\wp\\wp-content\\themes\\foundationPress",
+			"D:\\Projects\\100_11-10-trygvewastvedt\\www\\wp\\wp-content\\themes\\foundationPress\\bower_components\\foundation\\",
+			"D:\\Projects\\100_11-10-trygvewastvedt\\www\\wp\\wp-content\\themes\\foundationPress\\bower_components\\foundation\\scss",
+			"D:/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt",
+			"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp/wp-content/themes/wastvedt",
+			"/home/wastvedt/shared/Projects/100_11-10-trygvewastvedt/www/wp"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"getFam",
+			"text",
+			"toLocal",
+			"tolocal",
+			"arc",
+			"level",
+			"arc",
+			"svg",
+			"tolocal",
+			"attr",
+			"undefine",
+			"getperson",
+			"arc",
+			"tolocal",
+			"radial",
+			"radialalig",
+			".y",
+			"line",
+			"create",
+			"links",
+			"link",
+			"spouse",
+			"namesvg",
+			"name",
+			"svg",
+			"name",
+			"classed",
+			"svg",
+			"getPerson",
+			"name",
+			"text",
+			"name",
+			"hasown",
+			"sortList",
+			"links",
+			"setupg",
+			".sort",
+			"level",
+			"sortList",
+			"familiesToDo",
+			"addParent",
+			"settings",
+			"data",
+			"level",
+			"type",
+			"node",
+			"todo",
+			"select",
+			"0,",
+			"toPol",
+			"transform",
+			"rootFamilyID",
+			"each",
+			"data.people",
+			"link",
+			"empty",
+			"property",
+			"margin",
+			"mother",
+			"json",
+			"tilewi",
+			"topbar-h",
+			"container",
+			"top-bar-container",
+			"z-ind",
+			"z-",
+			"z-=i",
+			"tile-summ",
+			"@include",
+			"$tile-size",
+			"(\\$tile-size \\* )([0-9\\.]*);",
+			"@media",
+			"120",
+			"tilewidth",
+			"spacing",
+			"tile-summary",
+			"caption",
+			"nav-top",
+			"docf",
+			"docfill",
+			"0.75rem",
+			"index",
+			"startIteration",
+			"filter",
+			"filteredTil",
+			"tw_project",
+			"has_cap(",
+			"touchmove",
+			"search",
+			"?",
+			"setattrib",
+			"tag-menu",
+			"display: none",
+			"tag",
+			"data(",
+			"xpos",
+			"add(",
+			"add",
+			"filteredTiles",
+			"y",
+			"GANIM.settings.tile",
+			"tileData",
+			"width",
+			"&",
+			"60",
+			"\"",
+			"inline",
+			"tiles-h",
+			"tiles-header",
+			"tiles-header-",
+			"bx",
+			"button",
+			"link-padding",
+			"tiles-header",
+			"svg",
+			"icon",
+			"svg",
+			"icon",
+			"full",
+			"fullWidth",
+			"\"",
+			"exit-",
+			"exit",
+			"border-botto",
+			"top",
+			"media",
+			"touches",
+			"$touchTile"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"[1]",
+			"attr",
+			"father",
+			"rem-calc($tile-size);",
+			"rem-calc(\\1\\2);",
+			"x",
+			"'",
+			"$touchmoveTile",
+			"$touchTile",
+			".bxslider",
+			"directionV",
+			"baseV",
+			"Rel",
+			"$el",
+			"this",
+			"var $1 = function(",
+			"var $1 = function",
+			"var $0 = function\\(",
+			"",
+			"var ",
+			"GANIM.settings.tileRanges",
+			""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "todo.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 94,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6,
+								6
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1142,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1142,
+								1142
+							]
+						],
+						"settings":
+						{
+							"auto_indent": false,
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_width": 2,
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 26.0
+	},
+	"input":
+	{
+		"height": 34.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": false,
+	"output.doc":
+	{
+		"height": 0.0
+	},
+	"output.errorlist":
+	{
+		"height": 200.0
+	},
+	"output.exec":
+	{
+		"height": 124.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.git-commit":
+	{
+		"height": 112.0
+	},
+	"output.package_dev":
+	{
+		"height": 112.0
+	},
+	"pinned_build_system": "",
+	"project": "15-3-Family Tree Graph.sublime-project",
+	"replace":
+	{
+		"height": 48.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"conf",
+				"www\\wp\\wp-config.php"
+			],
+			[
+				"config",
+				"foundationPress\\config.rb"
+			],
+			[
+				"tiles",
+				"foundationPress\\js\\tiles.js"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"D:\\Projects\\100_11-10-trygvewastvedt\\trygvewastvedt.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+		"xdebug":
+		{
+			"hide_conflict": false
+		}
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 266.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
