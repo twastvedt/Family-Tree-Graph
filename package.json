@@ -10,19 +10,22 @@
     "d3": "3.x"
   },
   "devDependencies": {
+    "@types/d3": "3.x",
+    "@types/mousetrap": "^1.5.32",
+    "@types/node": "^6.0.53",
     "browserify": "latest",
     "live-reload": "latest",
     "mousetrap": "^1.6.0",
     "node-sass": "^3.13.0",
     "parallelshell": "latest",
     "tsify": "^2.0.3",
-    "typescript": "^2.0.10",
+    "typescript": "^2.1",
     "watch": "^1.0.1",
     "watchify": "latest"
   },
   "scripts": {
-    "ts": "browserify src/ts/main.ts typings/main.d.ts typings/custom.d.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js",
-    "watch-ts": "watchify src/ts/main.ts typings/main.d.ts typings/custom.d.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js -v",
+    "ts": "browserify src/ts/main.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js",
+    "watch-ts": "watchify src/ts/main.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js -v",
     "post-build": "copy-assets",
     "copy-assets": "cp -r src/html/. dist/",
     "watch-assets": "watch \"npm run copy-assets\" src/html",

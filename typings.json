@@ -1,9 +1,0 @@
-{
-  "name": "family-tree-graph",
-  "ambientDependencies": {
-    "d3": "github:DefinitelyTyped/DefinitelyTyped/d3/d3.d.ts#e5a27ea95e47b95333784f1f0d590127b4e39a89"
-  },
-  "ambientDevDependencies": {
-    "es6-shim": "github:DefinitelyTyped/DefinitelyTyped/es6-shim/es6-shim.d.ts#4de74cb527395c13ba20b438c3a7a419ad931f1c"
-  }
-}
