@@ -36,7 +36,8 @@ export class Graph {
 
 		var width = window.innerWidth - 50,
 			svgNode: any = this.data.svg.node(),
-			height = window.innerHeight - svgNode.getBoundingClientRect().top - 50;
+			height = window.innerHeight - svgNode.getBoundingClientRect().top - 50,
+			that = this;
 
 		this.data.svg.attr({
 			'width': width,
@@ -112,7 +113,7 @@ export class Graph {
 			childLinks = links.filter('.child');
 
 		var nodes = main.selectAll('.node')
-			.data(this.data.tree.nodeList, function(d) { return d.handle; })
+			.data(this.data.tree.nodeList, (d) => d.handle)
 			.enter().append('g')
 			.attr({
 				'class': function(d) {
@@ -127,8 +128,8 @@ export class Graph {
 				'id': function(d) { return d.handle; }
 			});
 
-		var people = main.selectAll('.Person');
-		var families = main.selectAll('.Family');
+		var people: d3.Selection<Nodes.Person> = main.selectAll('.Person');
+		var families: d3.Selection<Nodes.Family> = main.selectAll('.Family');
 
 		var familyArcs = families.append('path')
 			.attr({
@@ -144,25 +145,41 @@ export class Graph {
 
 		//add person line for people with no parent
 		people.filter(function(d) { return !d.hasOwnProperty('childOf'); })
-			.append('line')
-				.attr({
-					'class': 'link tail',
-					'x1': 0,
-					'y1': (d) => settings.ringSpacing * d.level,
-					'x2': 0,
-					'y2': (d) => settings.ringSpacing * (d.level + 0.5)
-				});
 
-		//add life lines to people
-		people.filter((d) => d.birth)
-			.append('line')
-				.attr({
-					'class': 'lifeLine',
-					'x1': 0,
-					'y1': (d) => this.scale(d.birth),
-					'x2': 0,
-					'y2': (d) => this.scale(d.death ? d.death : new Date())
-				});
+
+		people.each(function(d) {
+			if (!d.hasOwnProperty('childOf')) {
+				//person has no parent
+				d3.select(this).append('line')
+					.attr({
+						'class': 'link tail',
+						'x1': 0,
+						'y1': (d) => settings.ringSpacing * d.level,
+						'x2': 0,
+						'y2': (d) => settings.ringSpacing * (d.level + 0.5)
+					});
+			} else if (!d.hasOwnProperty('birth')) {
+				//person has no birth info
+				d3.select(this).append('line')
+					.attr({
+						'class': 'link',
+						'x1': 0,
+						'y1': (d) => settings.ringSpacing * d.childOf.level,
+						'x2': 0,
+						'y2': (d) => d.hasOwnProperty('parentIn') ? settings.ringSpacing * d.parentIn.level : 0
+					});
+			} else {
+				//have all required info
+				d3.select(this).append('line')
+					.attr({
+						'class': 'lifeLine',
+						'x1': 0,
+						'y1': (d) => that.scale(d.birth),
+						'x2': 0,
+						'y2': (d) => that.scale(d.death ? d.death : new Date())
+					});
+			}
+		})
 
 		////////
 		//events
@@ -191,18 +208,17 @@ export class Graph {
 			});
 
 			//Keep family node between parents
-			families.each(function(d) {
-				if (d.x && d.y && d.father && d.mother) {
-					var fatherPolar = new Pt(d.father.x, d.father.y).toPolar(),
-						avgPos = [(d.father.x + d.mother.x)/2, (d.father.y + d.mother.y)/2],
-						currentPolar = new Pt(fatherPolar[0], Math.atan2(avgPos[1], avgPos[0])),
+			families.filter((d) => d.x && d.y && d.parents.length == 2)
+				.each(function(d) {
+					var firstParentPolar = new Pt(d.parents[0].x, d.parents[0].y).toPolar(),
+						avgPos = [(d.parents[0].x + d.parents[1].x)/2, (d.parents[0].y + d.parents[1].y)/2],
+						currentPolar = new Pt(firstParentPolar[0], Math.atan2(avgPos[1], avgPos[0])),
 						newPos = currentPolar.fromPolar();
 
 					d.x = newPos[0];
 					d.y = newPos[1];
 					d.polar = currentPolar;
-				}
-			});
+				});
 
 			//Apply transformations
 			childLinks.attr({

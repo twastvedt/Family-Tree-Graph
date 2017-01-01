@@ -9,6 +9,7 @@ export enum Gender { Male, Female };
 export class TreeNode {
 	x: number;
 	y: number;
+	polar: Pt;
 	level: number;
 	sortList: SortItem[];
 	complete: boolean;
