@@ -18,6 +18,8 @@ export class Graph {
 	scale: d3.time.Scale<number, number>;
 	data: Data;
 
+	main: d3.Selection<any>;
+
 	constructor(xmlDoc: Document) {
 
 		this.data = new Data(xmlDoc);
@@ -27,7 +29,7 @@ export class Graph {
 
 		this.scale = d3.time.scale()
 			.domain(this.data.tree.dateRange)
-			.range([settings.width / 2, 0]);
+			.range([settings.layout.width / 2, 0]);
 
 		this.setupGraph();
 	}
@@ -45,23 +47,24 @@ export class Graph {
 		});
 
 		this.force = <d3.layout.Force<Link, Nodes.TreeNode>>d3.layout.force()
-			.gravity(settings.gravity)
-			.charge(settings.charge)
-			.friction(settings.friction)
-			.alpha(settings.alpha)
+			.gravity(settings.force.gravity)
+			.charge(settings.force.charge)
+			.friction(settings.force.friction)
+			.alpha(settings.force.alpha)
 			.size([1, 1])
 
 			.nodes(this.data.tree.nodeList)
 			.links(this.data.tree.links);
 
-		var main = this.data.svg.append('g')
+		this.main = this.data.svg.append('g')
 			.attr({ 'transform': 'translate(' + width / 2 + ',' + height / 2 + ')' })
-			.call(d3.behavior.zoom().scaleExtent([0.5, 8]).on('zoom', function () {
-				main.attr('transform', 'translate(' + (<d3.ZoomEvent>d3.event).translate + ')scale(' + (<d3.ZoomEvent>d3.event).scale + ')');
+			.call(d3.behavior.zoom().scaleExtent([1, 8]).on('zoom', () => {
+				var e = <d3.ZoomEvent>d3.event;
+				this.setZoom(e.translate, e.scale);
 			}))
 			.append('g');
 
-		main.append('rect')
+		this.main.append('rect')
 			.attr({'transform': 'translate(' + (-width / 2) + ',' + (-height / 2) + ')',
 				'class': 'overlay',
 				'width': width,
@@ -70,7 +73,7 @@ export class Graph {
 
 		//////////////////////
 		//grid background
-		var grid = main.append('g')
+		var grid = this.main.append('g')
 			.attr({'class': 'grid'});
 
 		var ticks = this.scale.ticks(this.data.tree.maxLevel);
@@ -96,7 +99,7 @@ export class Graph {
 
 		///////////
 		//draw tree
-		var links = main.selectAll('.link')
+		var links = this.main.selectAll('.link')
 			.data(this.data.tree.links)
 			.enter().append('line')
 			.attr({
@@ -112,7 +115,7 @@ export class Graph {
 		var parentLinks = links.filter('.parent'),
 			childLinks = links.filter('.child');
 
-		var nodes = main.selectAll('.node')
+		var nodes = this.main.selectAll('.node')
 			.data(this.data.tree.nodeList, (d) => d.handle)
 			.enter().append('g')
 			.attr({
@@ -128,8 +131,8 @@ export class Graph {
 				'id': function(d) { return d.handle; }
 			});
 
-		var people: d3.Selection<Nodes.Person> = main.selectAll('.Person');
-		var families: d3.Selection<Nodes.Family> = main.selectAll('.Family');
+		var people: d3.Selection<Nodes.Person> = this.main.selectAll('.Person');
+		var families: d3.Selection<Nodes.Family> = this.main.selectAll('.Family');
 
 		var familyArcs = families.append('path')
 			.attr({
@@ -154,9 +157,9 @@ export class Graph {
 					.attr({
 						'class': 'link tail',
 						'x1': 0,
-						'y1': (d) => settings.ringSpacing * d.level,
+						'y1': (d) => settings.layout.ringSpacing * d.level,
 						'x2': 0,
-						'y2': (d) => settings.ringSpacing * (d.level + 0.5)
+						'y2': (d) => settings.layout.ringSpacing * (d.level + 0.5)
 					});
 			} else if (!d.hasOwnProperty('birth')) {
 				//person has no birth info
@@ -164,9 +167,9 @@ export class Graph {
 					.attr({
 						'class': 'link',
 						'x1': 0,
-						'y1': (d) => settings.ringSpacing * d.childOf.level,
+						'y1': (d) => settings.layout.ringSpacing * d.childOf.level,
 						'x2': 0,
-						'y2': (d) => d.hasOwnProperty('parentIn') ? settings.ringSpacing * d.parentIn.level : 0
+						'y2': (d) => d.hasOwnProperty('parentIn') ? settings.layout.ringSpacing * d.parentIn.level : 0
 					});
 			} else {
 				//have all required info
@@ -190,7 +193,7 @@ export class Graph {
 					//lock nodes on correct ring
 					var loc = d.Pt(),
 						currentPolar = loc.toPolar(),
-						newPos = new Pt(d.level * settings.ringSpacing, currentPolar[1]).fromPolar();
+						newPos = new Pt(d.level * settings.layout.ringSpacing, currentPolar[1]).fromPolar();
 
 					d.x = newPos[0];
 					d.y = newPos[1];
@@ -198,7 +201,7 @@ export class Graph {
 
 					//move label out to halfway up person line, rotate to stay upright
 					d3.select(this).select('.name').attr('transform', function(d) {
-						var transform = 'translate(0, ' + (d.level + 0.5) * settings.ringSpacing + ')';
+						var transform = 'translate(0, ' + (d.level + 0.5) * settings.layout.ringSpacing + ')';
 						if (d.y < 0) {
 							transform += ' rotate(180)';
 						}
@@ -248,14 +251,16 @@ export class Graph {
 			this.playPause();
 		});
 
+		this.setZoom([0,0], 1);
+
 		///////
 		//start
 		this.force.linkDistance(function(d) {
 				switch (d.type) {
 					case Nodes.SortRelation.Parent:
-						return settings.ringSpacing * settings.parentLinkDistance;
+						return settings.layout.ringSpacing * settings.force.parentLinkDistance;
 					case Nodes.SortRelation.Child:
-						return settings.ringSpacing * settings.childLinkDistance;
+						return settings.layout.ringSpacing * settings.force.childLinkDistance;
 					default:
 						return 1;
 				}
@@ -273,6 +278,12 @@ export class Graph {
 
 		this.force.start();
 	};
+
+	setZoom(translate: [number, number], scale: number) {
+		this.main.attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
+
+		this.main.selectAll('text').style('font-size', (settings.layout.textSize / scale) + 'px');
+	}
 
 	playPause () {
 		if (this.force.alpha() > 0) {

@@ -2,25 +2,31 @@
 	//ID of starting family
 	"rootFamilyId": "F0000",
 
-	//distance between generations
-	"ringSpacing": 75,
+	"layout": {
+		//distance between generations
+		"ringSpacing": 75,
 
-	//diameter of circle graph, in pixels(?)
-	"width": 1000,
+		//diameter of circle graph, in pixels(?)
+		"width": 1000,
 
-	//maximum change in node position per tick due to any single force
-	"constraintStrength": 0.2,
+		"textSize": 12
+	},
 
-	"gravity": 0,
+	"force": {
+		//maximum change in node position per tick due to any single force
+		"constraintStrength": 0.2,
 
-	//link lengths as factors of ringSpacing
-	"childLinkDistance": 0.9,
+		"gravity": 0,
 
-	"parentLinkDistance": 0.3,
+		//link lengths as factors of ringSpacing
+		"childLinkDistance": 0.9,
 
-	"charge": -20,
+		"parentLinkDistance": 0.3,
 
-	"friction": 0.9,
+		"charge": -20,
 
-	"alpha": 0.2
+		"friction": 0.9,
+
+		"alpha": 0.2
+	}
 }

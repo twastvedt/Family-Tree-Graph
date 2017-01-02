@@ -121,7 +121,7 @@ export class Person extends TreeNode {
 
 			nameXML.selectAll('surname').each(function () {
 				nameSVG.append('tspan')
-					.text(this.innerHTML)
+					.text(' ' + this.innerHTML)
 					.attr({
 						'class': 'last',
 						'type': this.getAttribute('derivation')
@@ -227,7 +227,7 @@ export class Family extends TreeNode {
 
 	   var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
 		   sweep = (dTheta > 0) ? 1 : 0,
-		   r = this.level * settings.ringSpacing;
+		   r = this.level * settings.layout.ringSpacing;
 
 	   return 'M' + start.toString() +
 		   'A' + r + ',' + r + ' 0 ' +

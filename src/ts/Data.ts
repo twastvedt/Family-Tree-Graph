@@ -155,7 +155,7 @@ export class Data {
 			for (var j = 0; j < length; j++) {
 				var person = curLevel[j],
 					theta = j / length * 2 * Math.PI,
-					coords = new Pt(i * settings.ringSpacing, theta).fromPolar();
+					coords = new Pt(i * settings.layout.ringSpacing, theta).fromPolar();
 
 				person.x = coords[0];
 				person.y = coords[1];

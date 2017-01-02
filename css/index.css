@@ -1,0 +1,59 @@
+svg {
+  font-size: 14px; }
+
+.label {
+  font-size: 75%; }
+
+path,
+circle {
+  fill: none;
+  stroke-width: 1px; }
+
+.link {
+  stroke: #555; }
+
+.lifeLine {
+  stroke: blue; }
+
+.familyArc {
+  stroke: #555; }
+
+path.level {
+  stroke: #bbb;
+  stroke-width: 0.5px; }
+
+.label {
+  text-anchor: middle; }
+
+button {
+  width: 100px;
+  height: 30px;
+  border-radius: 5px;
+  background: #ddd;
+  border: 1px solid #aaa;
+  text-align: center;
+  font-size: 16px; }
+  button:hover {
+    background: #aaa; }
+
+svg {
+  border: 1px solid #aaa; }
+
+.buttons {
+  margin: 0 0 10px; }
+
+.overlay {
+  fill: none;
+  pointer-events: all; }
+
+.node, .family, .person {
+  text-anchor: middle; }
+
+.family .first {
+  display: none; }
+
+.person [type='Taken'],
+.person [type='Inherited'] {
+  display: none; }
+
+/*# sourceMappingURL=../dist/css/index.css.map */
