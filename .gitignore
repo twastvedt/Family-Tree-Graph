@@ -1,6 +1,5 @@
-/bower_components
 /node_modules
-
+/.cache
+/.sass-cache
 /.vs
-/bin
-/obj
+/dist/*
