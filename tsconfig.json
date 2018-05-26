@@ -2,15 +2,14 @@
   "compilerOptions": {
     "sourceMap": true,
     "removeComments": true,
-    "module": "commonjs",
-	"moduleResolution": "node",
-    "target": "es5",
-    "out": "tsc.js",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "target": "es2015",
+    "lib": [
+      "es2015",
+      "dom"
+    ]
   },
   "files": [
-    "typings/main.d.ts",
-	  "typings/custom.d.ts",
-    "src/ts/main.ts"
+    "src/ts/app.ts"
   ]
 }

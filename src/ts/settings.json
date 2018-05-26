@@ -2,6 +2,9 @@
 	//ID of starting family
 	"rootFamilyId": "F0000",
 
+	// Data file path
+	"dataPath": "./data/family-tree.xml",
+
 	"layout": {
 		//distance between generations
 		"ringSpacing": 75,

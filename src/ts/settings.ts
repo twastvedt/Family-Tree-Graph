@@ -1,5 +1,6 @@
 ﻿interface Settings {
 	rootFamilyId: string;
+	dataPath: string;
 	layout: {
 		ringSpacing: number;
 		width: number;
@@ -17,6 +18,4 @@
 	}
 }
 
-var settings: Settings = require('./settings.json');
-
-export default settings;
+export default require('./settings.json') as Settings;

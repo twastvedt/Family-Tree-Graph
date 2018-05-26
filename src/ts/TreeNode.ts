@@ -2,7 +2,7 @@
 import settings from './settings';
 
 import {Data} from './Data';
-import * as d3 from 'd3';
+import d3 from 'd3';
 
 export enum Gender { Male, Female };
 

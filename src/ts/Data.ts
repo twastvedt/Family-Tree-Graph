@@ -2,7 +2,7 @@
 import settings from './settings';
 import Pt from './Pt';
 
-import * as d3 from 'd3';
+import d3 from 'd3';
 
 interface FamilyData {
 	level: number;
@@ -101,7 +101,7 @@ export class Data {
 					this.tree.addToLevel(child, level - 1);
 				}
 
-				// Copy family's sortlist to child
+				// Copy family's sortList to child
 				child.sortList = sortList.slice();
 
 				if (sortList[0].rel == TreeNode.SortRelation.Child) {

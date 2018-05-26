@@ -38,7 +38,7 @@
 		}
 	};
 
-	fromLocal(elem: SVGLocatable, doc: HTMLElement) {
+	fromLocal(elem: SVGGraphicsElement, doc: HTMLElement) {
 		//convert local point coordinate to global
 
 		var offset = doc.getBoundingClientRect(),
@@ -48,7 +48,7 @@
 			(this[0] / matrix.b) + (this[1] / matrix.d) - matrix.f + offset.top);
 	};
 
-	toLocal(elem: SVGLocatable, doc: HTMLElement) {
+	toLocal(elem: SVGGraphicsElement, doc: HTMLElement) {
 		//convert global point coordinate to local
 
 		var offset = doc.getBoundingClientRect(),
