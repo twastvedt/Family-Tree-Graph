@@ -7,21 +7,20 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "d3": "3.x"
+    "@types/d3": "3.x",
+    "@types/mousetrap": "^1.6.0",
+    "@types/node": "^10.1.2",
+    "browserify": "^16.2.2",
+    "d3": "3.x",
+    "mousetrap": "^1.6.1",
+    "parallelshell": "^3.0.2",
+    "tsify": "^4.0.0",
+    "typescript": "^2.8"
   },
   "devDependencies": {
-    "@types/d3": "3.x",
-    "@types/mousetrap": "^1.5.32",
-    "@types/node": "^6.0.53",
-    "browserify": "latest",
     "live-reload": "latest",
-    "mousetrap": "^1.6.0",
-    "node-sass": "^3.13.0",
-    "parallelshell": "latest",
-    "tsify": "^2.0.3",
-    "typescript": "^2.1",
-    "watch": "^1.0.1",
-    "watchify": "latest"
+    "watch": "^1.0.2",
+    "watchify": "^3.11.0"
   },
   "scripts": {
     "ts": "browserify src/ts/main.ts --debug -p [ tsify --noImplicitAny ] -o dist/js/bundle.js",
@@ -29,11 +28,10 @@
     "post-build": "copy-assets",
     "copy-assets": "cp -r src/html/. dist/",
     "watch-assets": "watch \"npm run copy-assets\" src/html",
-    "css": "node-sass --source-map dist/css/index.css.map -o css src/scss/index.scss dist/css/index.css",
+    "css": "sass src/scss/index.scss:dist/css/index.css",
     "watch-css": "npm run css & npm run css -- -w src/scss/index.scss",
-    "serve": "parallelshell \"http-server -p 9092 ./dist\" \"c:/PROGRA~2/Google/Chrome/Application/chrome.exe http://localhost:9092/ --remote-debugging-port=9222\"",
-    "livereload": "live-reload ./dist/ --port 9093",
+    "serve": "live-server --wait=300 --no-browser dist",
     "watch": "parallelshell \"npm run watch-assets\" \"npm run watch-ts\" \"npm run watch-css\"",
-    "dev": "parallelshell \"npm run watch\" \"npm run livereload\" \"npm run serve\""
+    "dev": "parallelshell \"npm run watch\" \"npm run serve\""
   }
 }
