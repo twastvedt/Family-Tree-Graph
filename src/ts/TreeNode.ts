@@ -1,8 +1,8 @@
 ﻿import Pt from './Pt';
 import settings from './settings';
 
-import {Data} from './Data';
-import d3 from 'd3';
+import { Data } from './Data';
+import * as d3 from 'd3';
 
 export enum Gender { Male, Female };
 
@@ -28,7 +28,7 @@ export class Person extends TreeNode {
 	death: Date;
 	firstName: string;
 	lastName: string;
-	nameSVG: Node;
+	nameSVG: SVGTextElement;
 
 	constructor(handle: string, data: Data) {
 		//Get all data from the xml related to one person
@@ -60,10 +60,10 @@ export class Person extends TreeNode {
 	setup(data: Data) {
 		this.complete = true;
 
-		var person = data.xml.select('person[handle=' + this.handle + ']');
+		var person = data.xml.select<HTMLElement>('person[handle=' + this.handle + ']');
 
 		if (!person.empty()) {
-			this.gender = person.select('gender').text() == 'M' ? Gender.Male : Gender.Female;
+			this.gender = person.select<HTMLElement>('gender').text() == 'M' ? Gender.Male : Gender.Female;
 
 			if (!person.select('parentin').empty()) {
 				let familyHandle = person.select('parentin').attr('hlink');
@@ -82,7 +82,7 @@ export class Person extends TreeNode {
 			}
 
 			let thisPerson = this;
-			person.selectAll('eventref').each(function () {
+			person.selectAll<HTMLElement, unknown>('eventref').each(function () {
 				var e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
 
 				if (!e.empty()) {
@@ -111,7 +111,7 @@ export class Person extends TreeNode {
 			this.firstName = nameXML.select('first').text();
 			console.log('  ', this.firstName);
 
-			var nameSVG = data.svg.append('text')
+			var nameSVG = data.svg.append<SVGTextElement>('text')
 				.remove()
 				.attr('class', 'name');
 
@@ -119,16 +119,14 @@ export class Person extends TreeNode {
 				.text(this.firstName)
 				.attr('class', 'first');
 
-			nameXML.selectAll('surname').each(function () {
+			nameXML.selectAll<HTMLElement, unknown>('surname').each(function () {
 				nameSVG.append('tspan')
 					.text(' ' + this.innerHTML)
-					.attr({
-						'class': 'last',
-						'type': this.getAttribute('derivation')
-					});
+					.classed('last', true)
+					.attr('type', this.getAttribute('derivation'));
 			});
 
-			this.nameSVG = <Node>nameSVG.node();
+			this.nameSVG = nameSVG.node();
 
 		} else {
 			console.log('Empty Person handle:', this.handle);
@@ -137,11 +135,10 @@ export class Person extends TreeNode {
 }
 
 export class Family extends TreeNode {
-
 	parents: Person[] = [];
 	marriage: Date;
 	children: Person[] = [];
-	nameSVG: Node;
+	nameSVG: SVGTextElement;
 
 	constructor(handle: string, data: Data, doSetup: boolean) {
 		super(handle);
@@ -175,7 +172,7 @@ export class Family extends TreeNode {
 			}
 
 			let thisFamily = this;
-			family.selectAll('eventref').each(function () {
+			family.selectAll<HTMLElement, unknown>('eventref').each(function () {
 				var e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
 
 				if (!e.empty()) {
@@ -190,7 +187,7 @@ export class Family extends TreeNode {
 				}
 			});
 
-			family.selectAll('childref').each(function () {
+			family.selectAll<HTMLElement, unknown>('childref').each(function () {
 				var handle = this.getAttribute('hlink');
 
 				if (data.tree.people[handle]) {
@@ -205,35 +202,35 @@ export class Family extends TreeNode {
 		}
 	}
 
-   // path generator for arcs
-   arc () {
-	   var start: Pt,
-		   end: Pt;
+	// path generator for arcs
+	arc() {
+		var start: Pt,
+			end: Pt;
 
-	   //keep text upright
-	   if (this.Pt()[1] >= 0) {
-		   end = this.parents[0].Pt();
-		   start = this.parents[1].Pt();
-	   } else {
-		   start = this.parents[1].Pt();
-		   end = this.parents[0].Pt();
-	   }
+		//keep text upright
+		if (this.Pt()[1] >= 0) {
+			end = this.parents[0].Pt();
+			start = this.parents[1].Pt();
+		} else {
+			start = this.parents[1].Pt();
+			end = this.parents[0].Pt();
+		}
 
-	   var startP = start.toPolar(),
-		   endP = end.toPolar(),
+		var startP = start.toPolar(),
+			endP = end.toPolar(),
 
-		   dTheta = endP[1] - startP[1];
-		   dTheta += (dTheta > Math.PI) ? -(Math.PI * 2) : (dTheta <- Math.PI) ? (Math.PI * 2) : 0;
+			dTheta = endP[1] - startP[1];
+		dTheta += (dTheta > Math.PI) ? -(Math.PI * 2) : (dTheta < - Math.PI) ? (Math.PI * 2) : 0;
 
-	   var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
-		   sweep = (dTheta > 0) ? 1 : 0,
-		   r = this.level * settings.layout.ringSpacing;
+		var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
+			sweep = (dTheta > 0) ? 1 : 0,
+			r = this.level * settings.layout.ringSpacing;
 
-	   return 'M' + start.toString() +
-		   'A' + r + ',' + r + ' 0 ' +
-		   largeArc + ',' + sweep + ' ' +
-		   end.toString();
-   };
+		return 'M' + start.toString() +
+			'A' + r + ',' + r + ' 0 ' +
+			largeArc + ',' + sweep + ' ' +
+			end.toString();
+	};
 };
 
 export enum Spouse { Father, Mother };

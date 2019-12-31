@@ -1,12 +1,10 @@
-import {Graph} from './Graph';
+import { Graph } from './Graph';
 import settings from './settings';
-import d3 from 'd3';
-import 'mousetrap';
+import * as d3 from 'd3';
 
 var graph: Graph;
 
-d3.xml(settings.dataPath, (error: Error, xmlDoc: Document) => {
-	graph = new Graph(xmlDoc);
-});
-
-Mousetrap.bind('space', () => graph.playPause());
+d3.xml(settings.dataPath)
+	.then((xmlDoc) => {
+		graph = new Graph(xmlDoc);
+	});

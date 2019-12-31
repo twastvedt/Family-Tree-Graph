@@ -2,7 +2,7 @@
 import settings from './settings';
 import Pt from './Pt';
 
-import d3 from 'd3';
+import * as d3 from 'd3';
 
 interface FamilyData {
 	level: number;
@@ -15,9 +15,9 @@ export class Data {
 	//this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
 	familiesToDo = d3.map<FamilyData>();
 
-	xml: d3.Selection<any>;
+	xml: d3.Selection<XMLDocument, unknown, null, undefined>;
 
-	svg: d3.Selection<any>;
+	svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
 
 	constructor(xmlDoc: Document) {
 		this.parseData(xmlDoc);
@@ -50,7 +50,7 @@ export class Data {
 			}
 
 			var familyData = this.familiesToDo.get(familyId),
-				level:number = familyData.level,
+				level: number = familyData.level,
 				sortList: TreeNode.SortItem[] = familyData.sorting;
 
 			family.level = level;
@@ -85,7 +85,7 @@ export class Data {
 			// 	});
 
 			//store DOM node not d3 selection
-			family.nameSVG = <Node>nameSVG.node();
+			family.nameSVG = nameSVG.node();
 
 			//store data for each child of family
 			for (var i = 0; i < family.children.length; i++) {
@@ -132,7 +132,7 @@ export class Data {
 				//add links from family to children
 				this.tree.links.push({
 					'source': family,
-					'target':child,
+					'target': child,
 					'type': TreeNode.SortRelation.Child
 				});
 			}
@@ -143,7 +143,7 @@ export class Data {
 			this.tree.levels[i].sort(this.tree.sortLevel);
 
 			//for people without dates, define a default (average) level date
-			this.tree.levelAvg[i] = new Date(d3.mean(this.tree.levels[i], (el) => el.hasOwnProperty('birth') ? el.birth.valueOf() : null ));
+			this.tree.levelAvg[i] = new Date(d3.mean(this.tree.levels[i], (el) => el.hasOwnProperty('birth') ? el.birth.valueOf() : null));
 		}
 
 
@@ -164,7 +164,7 @@ export class Data {
 	}
 
 	//Add sorting info to a parent and the tree
-	addParentSorting (family: TreeNode.Family, parent: TreeNode.Person, sortList: TreeNode.SortItem[]) {
+	addParentSorting(family: TreeNode.Family, parent: TreeNode.Person, sortList: TreeNode.SortItem[]) {
 
 		if (!parent.complete) {
 			//parent not already processed
@@ -192,13 +192,13 @@ export class Data {
 		//add parent's family to list to do if it hasn't already been processed
 		if (parent.hasOwnProperty('childOf') &&
 			(!this.tree.families.hasOwnProperty(parent.childOf.handle) ||
-			!this.tree.families[parent.childOf.handle].complete)) {
-				this.familiesToDo.set(parent.childOf.handle,
-					{
-						'level': parent.level + 1,
-						'sorting': [<TreeNode.SortItem>{ 'rel': TreeNode.SortRelation.Child, 'order': 0 }].concat(parent.sortList)
-					}
-				);
+				!this.tree.families[parent.childOf.handle].complete)) {
+			this.familiesToDo.set(parent.childOf.handle,
+				{
+					'level': parent.level + 1,
+					'sorting': [<TreeNode.SortItem>{ 'rel': TreeNode.SortRelation.Child, 'order': 0 }].concat(parent.sortList)
+				}
+			);
 		}
 
 		//add link from father to family
@@ -212,10 +212,10 @@ export class Data {
 
 enum LinkSource { Family };
 
-export interface Link extends d3.layout.force.Link < TreeNode.TreeNode > {
-	'source': TreeNode.TreeNode;
-	'target': TreeNode.TreeNode;
-	'type': TreeNode.SortRelation;
+export interface Link {
+	source: TreeNode.TreeNode;
+	target: TreeNode.TreeNode;
+	type: TreeNode.SortRelation;
 }
 
 export class Tree {
@@ -248,7 +248,7 @@ export class Tree {
 	};
 
 	//Add a person to a level of the graph
-	addToLevel(person: TreeNode.Person, level:number) {
+	addToLevel(person: TreeNode.Person, level: number) {
 
 		//make sure the list for this level exists before adding a person to it
 		if (typeof this.levels[level] === 'undefined') {
