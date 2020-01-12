@@ -6,7 +6,7 @@ import * as d3 from 'd3';
 
 interface FamilyData {
 	level: number;
-	sorting: TreeNode.SortItem[];
+	sourcePerson: TreeNode.Person;
 }
 
 export class Data {
@@ -30,7 +30,7 @@ export class Data {
 		var rootFamilyHandle = this.xml.select('family#' + settings.rootFamilyId)
 			.attr('handle');
 
-		this.familiesToDo.set(rootFamilyHandle, { 'level': 1, 'sorting': [{ 'rel': TreeNode.SortRelation.Parent, 'order': 0 }] });
+		this.familiesToDo.set(rootFamilyHandle, { level: 1, sourcePerson: null });
 
 		while (this.familiesToDo.size()) {
 			var familyId = this.familiesToDo.keys()[0],
@@ -49,9 +49,31 @@ export class Data {
 				family = new TreeNode.Family(familyId, this, true);
 			}
 
-			var familyData = this.familiesToDo.get(familyId),
-				level: number = familyData.level,
-				sortList: TreeNode.SortItem[] = familyData.sorting;
+			var familyData = this.familiesToDo.get(familyId);
+			var level: number = familyData.level;
+			var sourcePerson = familyData.sourcePerson;
+
+			var familyWidth = 360 / (2 ** level);
+
+			if (sourcePerson === null) {
+				family.angle = 180;
+			} else {
+				var sourceIndex = family.parents.findIndex(p => p.handle == sourcePerson.handle);
+
+				if (sourceIndex != -1) {
+					family.angle = sourcePerson.angle + (sourceIndex == 1 ? -1 : 1) * familyWidth / 2;
+				} else {
+					var sourceIndex = family.children.findIndex(p => p.handle == sourcePerson.handle);
+
+					if (sourceIndex != -1) {
+						family.angle = sourcePerson.angle - (sourceIndex / family.children.length) * familyWidth + familyWidth / 2;
+					} else {
+						throw new Error('Can\'t find source person in new family!');
+					}
+				}
+			}
+
+			console.log(`familyWidth: ${familyWidth}, family angle: ${family.angle}, level: ${level}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`);
 
 			family.level = level;
 
@@ -61,9 +83,11 @@ export class Data {
 			this.familiesToDo.remove(familyId);
 
 			//store data for each parent of family
-			for (var parent of family.parents) {
-				this.addParentSorting(family, parent, sortList.slice());
-			}
+			family.parents.forEach((parent, i) => {
+				parent.angle = family.angle + (i - 0.5) * familyWidth;
+
+				this.addParentSorting(family, parent);
+			});
 
 			var nameSVG = this.svg.append('text')
 				.remove()
@@ -101,28 +125,15 @@ export class Data {
 					this.tree.addToLevel(child, level - 1);
 				}
 
-				// Copy family's sortList to child
-				child.sortList = sortList.slice();
-
-				if (sortList[0].rel == TreeNode.SortRelation.Child) {
-					//sortList comes from sibling
-					child.sortList[0] = { 'rel': TreeNode.SortRelation.Sibling, 'order': i };
-
-					if (child.sortList.length > 1) {
-						//if this family is linked by a child on the right side of a marriage, add siblings to the right, and vice versa
-						child.sortList[0].order += (child.sortList[1].order >= 0 ? 1 : -1);
-					}
-				} else {
-					//sortList comes from parent
-					child.sortList[0] = { 'rel': TreeNode.SortRelation.Child, 'order': i };
-				}
+				child.angle = family.angle + (familyWidth / (family.children.length + 1)) * (i + 1);
 
 				//add child's family to list to do if it hasn't already been processed
 				if (child.hasOwnProperty('parentIn') && !this.tree.families.hasOwnProperty(child.parentIn.handle)) {
 					this.familiesToDo.set(child.parentIn.handle,
 						{
 							'level': child.level,
-							'sorting': [<TreeNode.SortItem>{ 'rel': TreeNode.SortRelation.Parent, 'order': 0 }].concat(child.sortList)
+							// Offset to center of child's family.
+							'sourcePerson': child
 						}
 					);
 				}
@@ -140,8 +151,6 @@ export class Data {
 		}
 
 		for (var i = 0; i < this.tree.levels.length; i++) {
-			this.tree.levels[i].sort(this.tree.sortLevel);
-
 			//for people without dates, define a default (average) level date
 			this.tree.levelAvg[i] = new Date(d3.mean(this.tree.levels[i], (el) => el.hasOwnProperty('birth') ? el.birth.valueOf() : null));
 		}
@@ -164,30 +173,18 @@ export class Data {
 	}
 
 	//Add sorting info to a parent and the tree
-	addParentSorting(family: TreeNode.Family, parent: TreeNode.Person, sortList: TreeNode.SortItem[]) {
+	addParentSorting(family: TreeNode.Family, parent: TreeNode.Person) {
 
 		if (!parent.complete) {
 			//parent not already processed
 
 			//create object for parent and add to list of people
+
 			parent.setup(this);
 		}
-
 		if (!parent.hasOwnProperty('level')) {
 			this.tree.addToLevel(parent, family.level);
 		}
-
-		parent.sortList = sortList;
-
-		if (sortList[0].rel == TreeNode.SortRelation.Child) {
-			//sortList comes from child
-			parent.sortList[0] = { 'rel': TreeNode.SortRelation.Parent };
-		} else {
-			//sortList comes from other parent
-			parent.sortList[0] = { 'rel': TreeNode.SortRelation.Spouse };
-		}
-		//father defaults to left side of marriage in graph, mother to right
-		parent.sortList[0].order = (parent.gender == TreeNode.Gender.Male ? -1 : 1);
 
 		//add parent's family to list to do if it hasn't already been processed
 		if (parent.hasOwnProperty('childOf') &&
@@ -196,7 +193,7 @@ export class Data {
 			this.familiesToDo.set(parent.childOf.handle,
 				{
 					'level': parent.level + 1,
-					'sorting': [<TreeNode.SortItem>{ 'rel': TreeNode.SortRelation.Child, 'order': 0 }].concat(parent.sortList)
+					'sourcePerson': parent
 				}
 			);
 		}
@@ -227,25 +224,6 @@ export class Tree {
 	dateRange: Date[] = [];
 	levelAvg: Date[] = [];
 	nodeList: TreeNode.TreeNode[] = [];
-
-	//Sort people in each level based on lateral location in the graph
-	sortLevel(a: TreeNode.Person, b: TreeNode.Person) {
-
-		var aLen = a.sortList.length,
-			bLen = b.sortList.length,
-			minLen = Math.min(aLen, bLen);
-
-		//move backwards through the sortLists to find the first branch
-		for (var i = 1; i <= minLen; i++) {
-			var aSort = a.sortList[aLen - i],
-				bSort = b.sortList[bLen - i];
-
-			if (aSort.order !== bSort.order) {
-				return bSort.order - aSort.order;
-			}
-		}
-		throw 'Can\'t sort people!';
-	};
 
 	//Add a person to a level of the graph
 	addToLevel(person: TreeNode.Person, level: number) {

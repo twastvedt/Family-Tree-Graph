@@ -111,55 +111,71 @@ export class Graph {
 		var people: d3.Selection<SVGGElement, Nodes.Person, SVGGElement, any> = this.main.selectAll('.Person');
 		var families: d3.Selection<SVGGElement, Nodes.Family, SVGGElement, any> = this.main.selectAll('.Family');
 
+		d3.arc()
+
 		var familyArcs = families.append('path')
 			.classed('familyArc', true)
-			.attr('id', function (d) { return d.handle + '-arc'; });
+			.attr('id', function (d) { return d.handle + '-arc'; })
+			.attr('d', (d) => d.arc());
 
 		//add text to each family
-		families.append(function (d) { return d.nameSVG; });
+		families.append(function (d) {
+			return d.nameSVG;
+		});
 
 		//add text to each person
 		people.append(function (d) { return d.nameSVG; });
 
-		//add person line for people with no parent
-		people.filter(function (d) { return !d.hasOwnProperty('childOf'); })
+		// TODO: add person line for people with no parent
+		// people.filter(function (d) { return !d.hasOwnProperty('childOf'); })
 
+		people.sort((a, b) => a.level - b.level)
+			.each(function (d) {
+				var lifeLine = d3.select(this).append('line') as d3.Selection<SVGLineElement, Nodes.Person, any, unknown>;
 
-		people.each(function (d) {
-			if (d.x && d.y) {
+				lifeLine.classed('link tail', true)
+					.attr('x1', 0)
+					.attr('x2', 0);
+
+				// Life lines start out vertical so that y coordinate = date.
+				if (!d.hasOwnProperty('childOf')) {
+					//person has no parent
+					lifeLine.attr('y1', (d) => settings.layout.ringSpacing * d.level)
+						.attr('y2', (d) => settings.layout.ringSpacing * (d.level + 0.5));
+
+				} else if (!d.hasOwnProperty('birth')) {
+					//person has no birth info
+					lifeLine.attr('y1', (d) => settings.layout.ringSpacing * d.childOf.level)
+						.attr('y2', (d) => d.hasOwnProperty('parentIn') ? settings.layout.ringSpacing * d.parentIn.level : 0);
+
+				} else {
+					//have all required info
+					lifeLine.attr('y1', (d) => that.scale(d.birth))
+						.attr('y2', (d) => that.scale(d.death ? d.death : new Date()));
+				}
+
+				// Rotate into place.
+
+				var currentPolar = d.Pt().toPolar();
+				currentPolar[1] = d.angle;
+				d.polar = currentPolar;
+
+				d3.select(this).attr('transform', `rotate(${d.angle})`);
+
 				//move label out to halfway up person line, rotate to stay upright
 				(d3.select(this).select<SVGGElement>('.name') as d3.Selection<SVGGElement, Nodes.Person, any, unknown>)
 					.attr('transform', function (d) {
 						var transform = 'translate(0, ' + (d.level + 0.5) * settings.layout.ringSpacing + ')';
-						if (d.y < 0) {
-							transform += ' rotate(180)';
+
+						if (d.angle % 360 > 180) {
+							transform += ' rotate(90)';
+						} else {
+							transform += ' rotate(-90)';
 						}
+
 						return transform;
 					});
-			}
-
-			var lifeLine = d3.select(this).append('line') as d3.Selection<SVGLineElement, Nodes.Person, any, unknown>;
-
-			lifeLine.classed('link tail', true)
-				.attr('x1', 0)
-				.attr('x2', 0);
-
-			if (!d.hasOwnProperty('childOf')) {
-				//person has no parent
-				lifeLine.attr('y1', (d) => settings.layout.ringSpacing * d.level)
-					.attr('y2', (d) => settings.layout.ringSpacing * (d.level + 0.5));
-
-			} else if (!d.hasOwnProperty('birth')) {
-				//person has no birth info
-				lifeLine.attr('y1', (d) => settings.layout.ringSpacing * d.childOf.level)
-					.attr('y2', (d) => d.hasOwnProperty('parentIn') ? settings.layout.ringSpacing * d.parentIn.level : 0);
-
-			} else {
-				//have all required info
-				lifeLine.attr('y1', (d) => that.scale(d.birth))
-					.attr('y2', (d) => that.scale(d.death ? d.death : new Date()));
-			}
-		})
+			});
 
 		this.setZoom(d3.zoomIdentity);
 	};

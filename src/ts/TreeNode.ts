@@ -10,8 +10,8 @@ export class TreeNode {
 	x: number;
 	y: number;
 	polar: Pt;
+	angle: number;
 	level: number;
-	sortList: SortItem[];
 	complete: boolean;
 
 	constructor(public handle: string) { }
@@ -45,7 +45,7 @@ export class Person extends TreeNode {
 		}
 
 		//If called without the xml data, this is just being stored as a reference. We'll set up the person later.
-		if (data.xml == null) {
+		if (data.xml === null) {
 			console.log('Person Ref: ' + handle);
 			this.complete = false;
 
@@ -224,7 +224,7 @@ export class Family extends TreeNode {
 
 		var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
 			sweep = (dTheta > 0) ? 1 : 0,
-			r = this.level * settings.layout.ringSpacing;
+			r = this.marriage?.getUTCFullYear() ?? this.level * settings.layout.ringSpacing;
 
 		return 'M' + start.toString() +
 			'A' + r + ',' + r + ' 0 ' +
