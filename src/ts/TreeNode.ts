@@ -1,8 +1,10 @@
 ﻿import Pt from './Pt';
 import settings from './settings';
 
-import { Data } from './Data';
+import { Data, Tree } from './Data';
 import * as d3 from 'd3';
+
+import moment from 'moment';
 
 export enum Gender { Male, Female };
 
@@ -17,6 +19,18 @@ export class TreeNode {
 	constructor(public handle: string) { }
 
 	Pt = () => new Pt(this.x, this.y);
+
+	static estimateLifespan(birth: Date, death: Date = undefined) {
+		const interp = d3.scaleLinear()
+			.domain([1775, 2019])
+			.range([38, 82]);
+
+		if (birth !== undefined) {
+			return interp(birth.getUTCFullYear());
+		} else if (death !== undefined) {
+			return interp.domain(interp.domain().map((d, i) => d + interp.range()[i]))(death.getUTCFullYear());
+		}
+	}
 }
 
 export class Person extends TreeNode {
@@ -25,7 +39,9 @@ export class Person extends TreeNode {
 	childOf: Family;
 
 	birth: Date;
+	birthIsEstimate: boolean;
 	death: Date;
+	deathIsEstimate: boolean;
 	firstName: string;
 	lastName: string;
 	nameSVG: SVGTextElement;
@@ -81,6 +97,9 @@ export class Person extends TreeNode {
 				}
 			}
 
+			this.deathIsEstimate = true;
+			this.birthIsEstimate = true;
+
 			let thisPerson = this;
 			person.selectAll<HTMLElement, unknown>('eventref').each(function () {
 				var e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
@@ -89,10 +108,12 @@ export class Person extends TreeNode {
 					switch (e.select('type').text()) {
 						case 'Birth':
 							thisPerson.birth = new Date(e.select('dateval').attr('val'));
+							thisPerson.birthIsEstimate = false;
 							data.tree.addToDateRange(thisPerson.birth);
 							break;
 						case 'Death':
 							thisPerson.death = new Date(e.select('dateval').attr('val'));
+							thisPerson.deathIsEstimate = false;
 							data.tree.addToDateRange(thisPerson.death);
 							break;
 						default:
@@ -101,9 +122,15 @@ export class Person extends TreeNode {
 				}
 			});
 
-			if (this.hasOwnProperty('birth') && !this.hasOwnProperty('death')) {
-				//person still living
-				data.tree.dateRange[1] = new Date();
+			if (!this.birthIsEstimate && this.deathIsEstimate) {
+				if (moment().diff(this.birth, 'year') > TreeNode.estimateLifespan(undefined, new Date()) * 1.5) {
+					// Unlikely this person is still living.
+					this.death = moment(this.birth).add(TreeNode.estimateLifespan(this.birth)).toDate();
+				} else {
+					data.tree.dateRange[1] = new Date();
+				}
+			} else if (this.birthIsEstimate && !this.deathIsEstimate) {
+				this.birth = moment(this.death).subtract(TreeNode.estimateLifespan(undefined, this.death)).toDate();
 			}
 
 			var nameXML = person.select('name');
@@ -137,6 +164,7 @@ export class Person extends TreeNode {
 export class Family extends TreeNode {
 	parents: Person[] = [];
 	marriage: Date;
+	marriageIsEstimate: boolean;
 	children: Person[] = [];
 	nameSVG: SVGTextElement;
 
@@ -171,6 +199,8 @@ export class Family extends TreeNode {
 				this.parents.push(new Person(family.select('mother').attr('hlink'), data));
 			}
 
+			this.marriageIsEstimate = true;
+
 			let thisFamily = this;
 			family.selectAll<HTMLElement, unknown>('eventref').each(function () {
 				var e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
@@ -179,6 +209,7 @@ export class Family extends TreeNode {
 					switch (e.select('type').text()) {
 						case 'Marriage':
 							thisFamily.marriage = new Date(e.select('dateval').attr('val'));
+							thisFamily.marriageIsEstimate = false;
 							data.tree.addToDateRange(thisFamily.marriage);
 							break;
 						default:
@@ -197,39 +228,99 @@ export class Family extends TreeNode {
 				}
 			});
 
+			if (this.marriageIsEstimate) {
+				console.log('Undefined marriage');
+
+				// Don't have an exact date for this marriage - try to estimate.
+
+				if (this.children.some(c => !c.birthIsEstimate)) {
+					console.log(' 2 years before earliest definite birth of child.');
+
+					this.marriage = moment(this.children
+						.filter(p => !p.birthIsEstimate)
+						.map((p) => p.birth)
+						.reduce((a, b) => a < b ? a : b))
+						.subtract(2, 'year').toDate();
+				} else if (this.parents.some(c => !c.birthIsEstimate)) {
+					console.log(' 25 years after average definite birth of parents.');
+
+					this.marriage = moment(this.parents
+						.filter(p => !p.birthIsEstimate)
+						.map((p) => p.birth.getUTCMilliseconds())
+						.reduce((a, b, i) => (a * i + b) / (i + 1)))
+						.add(25, 'year').toDate();
+				} else {
+					console.log(' Average of indefinite births of parents (+25) and children (-2).');
+
+					var dates: number[] = [];
+
+					if (this.parents.some(p => p.birth !== undefined)) {
+						dates.push(moment(this.parents
+							.filter(p => p.birth !== undefined)
+							.map((p) => p.birth.getUTCMilliseconds())
+							.reduce((a, b, i) => (a * i + b) / (i + 1)))
+							.add(25, 'year').valueOf());
+					}
+
+					if (this.children.some(c => c.birth !== undefined)) {
+						dates.push(moment(this.children
+							.map((c) => c.birth)
+							.reduce((a, b) => a < b ? a : b))
+							.subtract(2, 'year').valueOf());
+					}
+
+					if (dates.length == 0) {
+						throw new Error('No data with which to place this marriage date.');
+					}
+
+					this.marriage = new Date(dates.reduce((t, d) => t + d) / dates.length);
+				}
+
+				console.log(` Guessed marriage: ${this.marriage.toString()}`);
+			}
+
+			this.parents.filter((p) => p.birthIsEstimate && p.deathIsEstimate)
+				.forEach((p) => {
+					p.birth = moment(this.marriage).subtract(25, 'year').toDate();
+					p.death = moment(p.birth).add(TreeNode.estimateLifespan(p.birth), 'year').toDate();
+				});
+
+			this.children.filter((c) => c.birthIsEstimate && c.deathIsEstimate)
+				.forEach((c, i) => {
+					c.birth = moment(this.marriage).add(2 + i * 2, 'year').toDate();
+					c.death = moment(c.birth).add(TreeNode.estimateLifespan(c.birth), 'year').toDate();
+				});
 		} else {
 			console.log('Empty family:', this.handle);
 		}
 	}
 
 	// path generator for arcs
-	arc() {
-		var start: Pt,
-			end: Pt;
+	arc(scale: d3.ScaleTime<number, number>) {
+		var start: number,
+			end: number;
 
 		//keep text upright
-		if (this.Pt()[1] >= 0) {
-			end = this.parents[0].Pt();
-			start = this.parents[1].Pt();
+		if (this.angle % 360 > 180) {
+			end = this.parents[0].angle;
+			start = this.parents[1].angle;
 		} else {
-			start = this.parents[1].Pt();
-			end = this.parents[0].Pt();
+			start = this.parents[1].angle;
+			end = this.parents[0].angle;
 		}
 
-		var startP = start.toPolar(),
-			endP = end.toPolar(),
+		var dTheta = end - start;
 
-			dTheta = endP[1] - startP[1];
-		dTheta += (dTheta > Math.PI) ? -(Math.PI * 2) : (dTheta < - Math.PI) ? (Math.PI * 2) : 0;
+		dTheta += (dTheta > 180) ? -360 : (dTheta < -180) ? 360 : 0;
 
 		var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
 			sweep = (dTheta > 0) ? 1 : 0,
-			r = this.marriage?.getUTCFullYear() ?? this.level * settings.layout.ringSpacing;
+			r = scale(this.marriage);
 
-		return 'M' + start.toString() +
+		return 'M' + new Pt(r, start * Math.PI / 180).fromPolar().toString() +
 			'A' + r + ',' + r + ' 0 ' +
 			largeArc + ',' + sweep + ' ' +
-			end.toString();
+			new Pt(r, end * Math.PI / 180).fromPolar().toString();
 	};
 };
 

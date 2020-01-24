@@ -2,6 +2,8 @@
   "compilerOptions": {
     "sourceMap": true,
     "removeComments": true,
+    "moduleResolution": "Node",
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "target": "es2015",
     "lib": [

@@ -116,7 +116,7 @@ export class Graph {
 		var familyArcs = families.append('path')
 			.classed('familyArc', true)
 			.attr('id', function (d) { return d.handle + '-arc'; })
-			.attr('d', (d) => d.arc());
+			.attr('d', (d) => d.arc(this.scale));
 
 		//add text to each family
 		families.append(function (d) {
