@@ -11,17 +11,22 @@ import Pt from './Pt';
 
 import { Data, Link, Tree } from './Data';
 import * as Nodes from './TreeNode';
+import moment from 'moment';
 
 
 export class Graph {
 	scale: d3.ScaleTime<number, number>;
 	data: Data;
 
+	svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+
 	main: d3.Selection<SVGGElement, any, HTMLElement, undefined>;
 
 	constructor(xmlDoc: Document) {
 
 		this.data = new Data(xmlDoc);
+
+		this.svg = d3.select('body').append('svg:svg');
 
 		//combine people and families to make list of all nodes
 		this.data.tree.nodeList = (<Nodes.TreeNode[]>d3.values(this.data.tree.people)).concat(<Nodes.TreeNode[]>d3.values(this.data.tree.families));
@@ -35,14 +40,14 @@ export class Graph {
 
 	setupGraph() {
 		var width = window.innerWidth - 50,
-			svgNode: any = this.data.svg.node(),
+			svgNode: any = this.svg.node(),
 			height = window.innerHeight - svgNode.getBoundingClientRect().top - 50,
 			that = this;
 
-		this.data.svg.attr('width', width);
-		this.data.svg.attr('height', height);
+		this.svg.attr('width', width);
+		this.svg.attr('height', height);
 
-		this.main = this.data.svg.append('g')
+		this.main = this.svg.append('g')
 			.attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
 			.call(d3.zoom().scaleExtent([1, 8]).on('zoom', () => {
 				var e = d3.event as d3.D3ZoomEvent<SVGGElement, any>;
@@ -58,28 +63,40 @@ export class Graph {
 
 		//////////////////////
 		//grid background
+
 		var grid = this.main.append('g')
 			.classed('grid', true);
 
-		var ticks = this.scale.ticks(this.data.tree.maxLevel);
+		for (var i = this.scale.invert(Math.max(width, height)).getFullYear(); i <= moment().year(); i++) {
+			var r = this.scale(new Date(i, 0, 0));
 
-		for (var i = 0; i < ticks.length; i++) {
-			var r = this.scale(ticks[i]);
-			grid.append('path')
+			var circle = grid.append('circle')
 				.classed('level', true)
-				.attr('d', 'M' + r + ',0A' + r + ',' + r + ' 0 0,1 -' + r + ',0A' + r + ',' + r + ' 0 0,1 ' + r + ',0')
+				.attr('cx', 0)
+				.attr('cy', 0)
+				.attr('r', r)
 				.attr('id', 'level-' + i);
 
-			grid.append('text')
-				.classed('label', true)
-				.append('textPath')
-				.attr('startOffset', '75%')
-				.attr('xlink:href', '#level-' + i)
-				.text(ticks[i].getFullYear());
+			if (i % 50 == 0) {
+				circle.classed('level-50', true)
+
+				grid.append('text')
+					.classed('label', true)
+					.append('textPath')
+					.attr('startOffset', '75%')
+					.attr('xlink:href', '#level-' + i)
+					.text(i);
+
+			} else if (i % 10 == 0) {
+				circle.classed('level-10', true)
+			} else {
+				circle.classed('level-1', true)
+			}
 		}
 
 		///////////
 		//draw tree
+
 		var links = this.main.selectAll('.link')
 			.data(this.data.tree.links)
 			.enter().append('line')
@@ -90,9 +107,6 @@ export class Graph {
 				}
 				return c;
 			});
-
-		var parentLinks = links.filter('.parent'),
-			childLinks = links.filter('.child');
 
 		var nodes = this.main.selectAll<SVGGElement, Nodes.TreeNode>('.node')
 			.data(this.data.tree.nodeList, (d) => d.handle)
@@ -114,67 +128,76 @@ export class Graph {
 		d3.arc()
 
 		var familyArcs = families.append('path')
-			.classed('familyArc', true)
+			.classed('familyArc mainPath', true)
+			.classed('estimate', d => d.marriageIsEstimate)
 			.attr('id', function (d) { return d.handle + '-arc'; })
 			.attr('d', (d) => d.arc(this.scale));
 
-		//add text to each family
-		families.append(function (d) {
-			return d.nameSVG;
-		});
+		// Add text to each family.
+		families.append('text')
+			.classed('name familyName', true)
+			.attr('dy', d => d.angle % 360 < 180 ? 12 : -3)
+			.append('textPath')
+			.classed('textPath', true)
+			.text(d => d.name)
+			.attr('startOffset', '50%')
+			.attr('xlink:href', d => '#' + d.handle + '-arc');
 
-		//add text to each person
-		people.append(function (d) { return d.nameSVG; });
+		// Add text to each person.
+		people.append('text')
+			.classed('name personName', true)
+			.text(d => d.firstName)
+			.each(function (d) {
+				if ((d.angle + 270) % 360 > 180) {
+					d3.select(this).attr('transform', `translate(${3 - d.parentOrder * 15}, ${that.scale(d.birth) - 7}) rotate(90)`)
+						.classed('reversed', true);
+				} else {
+					d3.select(this).attr('transform', `translate(${-3 - (d.parentOrder - 1) * 15}, ${that.scale(d.birth) - 7}) rotate(-90)`);
+				}
+			});
 
 		// TODO: add person line for people with no parent
 		// people.filter(function (d) { return !d.hasOwnProperty('childOf'); })
 
 		people.sort((a, b) => a.level - b.level)
 			.each(function (d) {
+
+				if (d.childOf !== undefined) {
+					d3.select(this).append('line')
+						.classed('link mainPath', true)
+						.attr('x1', 0)
+						.attr('x2', 0)
+						.attr('y1', that.scale(d.childOf.marriage))
+						.attr('y2', that.scale(d.birth))
+				}
+
+				if (d.parentIn !== undefined) {
+					d3.select(this).append('line')
+						.classed('life mainPath', true)
+						.attr('x1', 0)
+						.attr('x2', 0)
+						.attr('y1', that.scale(d.birth))
+						.attr('y2', that.scale(d.parentIn.marriage))
+				}
+
 				var lifeLine = d3.select(this).append('line') as d3.Selection<SVGLineElement, Nodes.Person, any, unknown>;
 
-				lifeLine.classed('link tail', true)
+				lifeLine.classed('life', true)
 					.attr('x1', 0)
-					.attr('x2', 0);
+					.attr('x2', 0)
+					.attr('y1', that.scale(d.birth))
+					.attr('y2', that.scale(d.death ? d.death : new Date()));
 
-				// Life lines start out vertical so that y coordinate = date.
-				if (!d.hasOwnProperty('childOf')) {
-					//person has no parent
-					lifeLine.attr('y1', (d) => settings.layout.ringSpacing * d.level)
-						.attr('y2', (d) => settings.layout.ringSpacing * (d.level + 0.5));
-
-				} else if (!d.hasOwnProperty('birth')) {
-					//person has no birth info
-					lifeLine.attr('y1', (d) => settings.layout.ringSpacing * d.childOf.level)
-						.attr('y2', (d) => d.hasOwnProperty('parentIn') ? settings.layout.ringSpacing * d.parentIn.level : 0);
-
-				} else {
-					//have all required info
-					lifeLine.attr('y1', (d) => that.scale(d.birth))
-						.attr('y2', (d) => that.scale(d.death ? d.death : new Date()));
+				if (!d.birthIsEstimate) {
+					d3.select(this).append('circle')
+						.attr('cx', 0)
+						.attr('cy', that.scale(d.birth))
+						.attr('r', 2)
+						.classed('birth', true);
 				}
 
 				// Rotate into place.
-
-				var currentPolar = d.Pt().toPolar();
-				currentPolar[1] = d.angle;
-				d.polar = currentPolar;
-
-				d3.select(this).attr('transform', `rotate(${d.angle})`);
-
-				//move label out to halfway up person line, rotate to stay upright
-				(d3.select(this).select<SVGGElement>('.name') as d3.Selection<SVGGElement, Nodes.Person, any, unknown>)
-					.attr('transform', function (d) {
-						var transform = 'translate(0, ' + (d.level + 0.5) * settings.layout.ringSpacing + ')';
-
-						if (d.angle % 360 > 180) {
-							transform += ' rotate(90)';
-						} else {
-							transform += ' rotate(-90)';
-						}
-
-						return transform;
-					});
+				d3.select(this).attr('transform', `rotate(${d.angle - 90})`);
 			});
 
 		this.setZoom(d3.zoomIdentity);

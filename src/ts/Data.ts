@@ -17,14 +17,11 @@ export class Data {
 
 	xml: d3.Selection<XMLDocument, unknown, null, undefined>;
 
-	svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
-
 	constructor(xmlDoc: Document) {
 		this.parseData(xmlDoc);
 	}
 
 	parseData(xmlDoc: Document) {
-		this.svg = d3.select('body').append('svg:svg');
 		this.xml = d3.select(xmlDoc);
 
 		var rootFamilyHandle = this.xml.select('family#' + settings.rootFamilyId)
@@ -58,15 +55,15 @@ export class Data {
 			if (sourcePerson === null) {
 				family.angle = 180;
 			} else {
-				var sourceIndex = family.parents.findIndex(p => p.handle == sourcePerson.handle);
+				var sourceIndex = family.parents.findIndex(p => p.handle === sourcePerson.handle);
 
-				if (sourceIndex != -1) {
+				if (sourceIndex !== -1) {
 					family.angle = sourcePerson.angle + (sourceIndex == 1 ? -1 : 1) * familyWidth / 2;
 				} else {
-					var sourceIndex = family.children.findIndex(p => p.handle == sourcePerson.handle);
+					sourceIndex = family.children.findIndex(p => p.handle === sourcePerson.handle);
 
-					if (sourceIndex != -1) {
-						family.angle = sourcePerson.angle - (sourceIndex / family.children.length) * familyWidth + familyWidth / 2;
+					if (sourceIndex !== -1) {
+						family.angle = sourcePerson.angle - ((sourceIndex + 1) / (family.children.length + 1)) * familyWidth + familyWidth / 2;
 					} else {
 						throw new Error('Can\'t find source person in new family!');
 					}
@@ -83,38 +80,17 @@ export class Data {
 			this.familiesToDo.remove(familyId);
 
 			//store data for each parent of family
-			family.parents.forEach((parent, i) => {
+			family.parents.filter(p => p !== sourcePerson).forEach((parent, i) => {
 				parent.angle = family.angle + (i - 0.5) * familyWidth;
+
+				parent.parentOrder = i;
 
 				this.addParentSorting(family, parent);
 			});
 
-			var nameSVG = this.svg.append('text')
-				.remove()
-				.attr('class', 'name');
-
-			//Perhaps the family shouldn't have a name - just display last names for each person?
-
-			// var textPath = <Node>nameSVG.append('textPath')
-			// 	.attr({
-			// 		'class': 'textPath',
-			// 		'startOffset': '50%',
-			// 		'xlink:href': '#' + family.handle + '-arc'
-			// 	})
-			// 	.node();
-
-			// d3.select(parent.nameSVG.cloneNode(true))
-			// 	.selectAll('*').each(function () {
-			// 		textPath.appendChild(this);
-			// 	});
-
-			//store DOM node not d3 selection
-			family.nameSVG = nameSVG.node();
-
-			//store data for each child of family
-			for (var i = 0; i < family.children.length; i++) {
+			// Store data for each child of family.
+			family.children.filter(p => p !== sourcePerson).forEach((child, i) => {
 				console.log('child ', i + 1, ' of ', family.children.length);
-				var child = family.children[i];
 
 				if (!child.complete) {
 					//setup child object and add to list of people
@@ -125,7 +101,7 @@ export class Data {
 					this.tree.addToLevel(child, level - 1);
 				}
 
-				child.angle = family.angle + (familyWidth / (family.children.length + 1)) * (i + 1);
+				child.angle = family.angle - (familyWidth / 2) + (familyWidth / (family.children.length + 1)) * (i + 1);
 
 				//add child's family to list to do if it hasn't already been processed
 				if (child.hasOwnProperty('parentIn') && !this.tree.families.hasOwnProperty(child.parentIn.handle)) {
@@ -138,37 +114,20 @@ export class Data {
 					);
 				}
 
-				family.children[i] = child;
-
 				//add links from family to children
 				this.tree.links.push({
 					'source': family,
 					'target': child,
 					'type': TreeNode.SortRelation.Child
 				});
-			}
+			});
+
 			console.log('families left: ', this.familiesToDo.size());
 		}
 
 		for (var i = 0; i < this.tree.levels.length; i++) {
 			//for people without dates, define a default (average) level date
 			this.tree.levelAvg[i] = new Date(d3.mean(this.tree.levels[i], (el) => el.hasOwnProperty('birth') ? el.birth.valueOf() : null));
-		}
-
-
-		//assign a starting location to each person
-		for (i = 0; i < this.tree.levels.length; i++) {
-			var length = this.tree.levels[i].length,
-				curLevel = this.tree.levels[i];
-
-			for (var j = 0; j < length; j++) {
-				var person = curLevel[j],
-					theta = j / length * 2 * Math.PI,
-					coords = new Pt(i * settings.layout.ringSpacing, theta).fromPolar();
-
-				person.x = coords[0];
-				person.y = coords[1];
-			}
 		}
 	}
 

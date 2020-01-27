@@ -9,16 +9,11 @@ import moment from 'moment';
 export enum Gender { Male, Female };
 
 export class TreeNode {
-	x: number;
-	y: number;
-	polar: Pt;
 	angle: number;
 	level: number;
 	complete: boolean;
 
 	constructor(public handle: string) { }
-
-	Pt = () => new Pt(this.x, this.y);
 
 	static estimateLifespan(birth: Date, death: Date = undefined) {
 		const interp = d3.scaleLinear()
@@ -33,18 +28,25 @@ export class TreeNode {
 	}
 }
 
+export class Name {
+	constructor(public name: string, public derivation: string) {
+	}
+}
+
 export class Person extends TreeNode {
 	gender: Gender;
 	parentIn: Family;
 	childOf: Family;
 
+	parentOrder: number;
+
 	birth: Date;
 	birthIsEstimate: boolean;
 	death: Date;
 	deathIsEstimate: boolean;
+
 	firstName: string;
-	lastName: string;
-	nameSVG: SVGTextElement;
+	surnames: Name[];
 
 	constructor(handle: string, data: Data) {
 		//Get all data from the xml related to one person
@@ -133,27 +135,18 @@ export class Person extends TreeNode {
 				this.birth = moment(this.death).subtract(TreeNode.estimateLifespan(undefined, this.death)).toDate();
 			}
 
-			var nameXML = person.select('name');
+			this.firstName = person.select('name').select<HTMLElement>('first').node().innerHTML;
 
-			this.firstName = nameXML.select('first').text();
+			this.surnames = [];
+			var that = this;
+
+			person.select('name')
+				.selectAll<HTMLElement, unknown>('surname')
+				.each(function () {
+					that.surnames.push(new Name(this.innerHTML, this.getAttribute('derivation')))
+				});
+
 			console.log('  ', this.firstName);
-
-			var nameSVG = data.svg.append<SVGTextElement>('text')
-				.remove()
-				.attr('class', 'name');
-
-			nameSVG.append('tspan')
-				.text(this.firstName)
-				.attr('class', 'first');
-
-			nameXML.selectAll<HTMLElement, unknown>('surname').each(function () {
-				nameSVG.append('tspan')
-					.text(' ' + this.innerHTML)
-					.classed('last', true)
-					.attr('type', this.getAttribute('derivation'));
-			});
-
-			this.nameSVG = nameSVG.node();
 
 		} else {
 			console.log('Empty Person handle:', this.handle);
@@ -166,7 +159,7 @@ export class Family extends TreeNode {
 	marriage: Date;
 	marriageIsEstimate: boolean;
 	children: Person[] = [];
-	nameSVG: SVGTextElement;
+	name: string;
 
 	constructor(handle: string, data: Data, doSetup: boolean) {
 		super(handle);
@@ -227,6 +220,8 @@ export class Family extends TreeNode {
 					thisFamily.children.push(new Person(handle, data));
 				}
 			});
+
+			this.name = this.parents.map(p => p.surnames.find(n => n.derivation === 'Taken')?.name).find(n => n !== undefined);
 
 			if (this.marriageIsEstimate) {
 				console.log('Undefined marriage');
@@ -302,8 +297,8 @@ export class Family extends TreeNode {
 
 		//keep text upright
 		if (this.angle % 360 > 180) {
-			end = this.parents[0].angle;
-			start = this.parents[1].angle;
+			start = this.parents[0].angle;
+			end = this.parents[1].angle;
 		} else {
 			start = this.parents[1].angle;
 			end = this.parents[0].angle;

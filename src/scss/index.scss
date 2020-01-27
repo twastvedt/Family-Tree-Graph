@@ -1,36 +1,52 @@
+$gray: #bbb;
+
 svg {
 	font-size: 14px;
+	border: 1px solid #aaa;
 }
 
 .label {
 	font-size: 75%;
+	text-anchor: middle;
 }
 
 path,
-circle {
+circle,
+line {
 	fill: none;
 	stroke-width: 1px;
+	stroke: black;
+	stroke-linecap: round;
 }
 
-.link {
-	stroke: #555;
+.link,
+.estimate {
+	stroke: $gray;
 }
 
-.lifeLine {
-	stroke: blue;
+.mainPath {
+	stroke-width: 2px;
 }
 
-.familyArc {
-	stroke: #555;
+.birth {
+	fill: black;
+	stroke: none;
 }
 
-path.level {
+circle.level {
 	stroke: #bbb;
-	stroke-width: 0.5px;
-}
+	
+	&.level-1 {
+		stroke-width: 0.125px;
+	}
 
-.label {
-	text-anchor: middle;
+	&.level-10 {
+		stroke-width: 0.25px;
+	}
+
+	&.level-50 {
+		stroke-width: 0.5px;
+	}
 }
 
 button {
@@ -47,10 +63,6 @@ button {
 	}
 }
 
-svg {
-	border: 1px solid #aaa;
-}
-
 .buttons {
 	margin: 0 0 10px;
 }
@@ -60,24 +72,10 @@ svg {
   pointer-events: all;
 }
 
-.node {
+.familyName {
 	text-anchor: middle;
 }
 
-
-.family {
-	@extend .node;
-
-	.first {
-		display: none;
-	}
-}
-
-.person {
-	@extend .node;
-
-	[type='Taken'],
-	[type='Inherited'] {
-		display: none;
-	}
+.personName.reversed {
+	text-anchor: end;
 }
