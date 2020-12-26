@@ -1,70 +1,70 @@
 $gray: #bbb;
 
 svg {
-	font-size: 14px;
-	border: 1px solid #aaa;
+  font-size: 14px;
+  border: 1px solid #aaa;
 }
 
 .label {
-	font-size: 75%;
-	text-anchor: middle;
+  font-size: 75%;
+  text-anchor: middle;
 }
 
 path,
 circle,
 line {
-	fill: none;
-	stroke-width: 1px;
-	stroke: black;
-	stroke-linecap: round;
+  fill: none;
+  stroke-width: 1px;
+  stroke: black;
+  stroke-linecap: round;
 }
 
 .link,
 .estimate {
-	stroke: $gray;
+  stroke: $gray;
 }
 
 .mainPath {
-	stroke-width: 2px;
+  stroke-width: 2px;
 }
 
 .birth {
-	fill: black;
-	stroke: none;
+  fill: black;
+  stroke: none;
 }
 
 circle.level {
-	stroke: #bbb;
-	
-	&.level-1 {
-		stroke-width: 0.125px;
-	}
+  stroke: #bbb;
 
-	&.level-10 {
-		stroke-width: 0.25px;
-	}
+  &.level-1 {
+    stroke-width: 0.125px;
+  }
 
-	&.level-50 {
-		stroke-width: 0.5px;
-	}
+  &.level-10 {
+    stroke-width: 0.25px;
+  }
+
+  &.level-50 {
+    stroke-width: 0.5px;
+  }
 }
 
 button {
-	width: 100px;
-	height: 30px;
-	border-radius: 5px;
-	background: #ddd;
-	border: 1px solid #aaa;
-	text-align: center;
-	font-size: 16px;
+  width: 100px;
+  height: 30px;
+  border-radius: 5px;
+  background: #ddd;
+  border: 1px solid #aaa;
+  text-align: center;
+  font-size: 16px;
 
-	&:hover {
-		background: #aaa;
-	}
+  &:hover {
+    background: #aaa;
+  }
 }
 
 .buttons {
-	margin: 0 0 10px;
+  margin: 0 0 10px;
 }
 
 .overlay {
@@ -73,9 +73,9 @@ button {
 }
 
 .familyName {
-	text-anchor: middle;
+  text-anchor: middle;
 }
 
 .personName.reversed {
-	text-anchor: end;
+  text-anchor: end;
 }
