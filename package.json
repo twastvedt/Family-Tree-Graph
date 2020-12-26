@@ -11,17 +11,22 @@
     "@types/mousetrap": "^1.6.3",
     "@types/node": "^13.1.2",
     "d3": "5.x",
+    "eslint-config-prettier": "^7.1.0",
     "moment": "^2.24.0",
     "mousetrap": "^1.6.3",
     "parallelshell": "^3.0.2",
     "parcel": "1.12.4",
-    "sass": "^1.24.0",
-    "typescript": "^3.7"
+    "sass": "^1.24.0"
   },
   "scripts": {
     "start": "parcel ./src/html/index.html"
   },
   "devDependencies": {
-    "node-sass": "^4.13.0"
+    "@typescript-eslint/eslint-plugin": "^4.11.0",
+    "@typescript-eslint/parser": "^4.11.0",
+    "eslint": "^7.16.0",
+    "node-sass": "^4.13.0",
+    "prettier": "^2.2.1",
+    "typescript": "^3.9.7"
   }
 }

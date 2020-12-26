@@ -11,24 +11,24 @@
 		this[1] = y;
 	};
 
-	rel(origin: Pt) {
+	rel(origin: Pt): Pt {
 		//return point relative to origin
 
 		return new Pt(this[0] - origin[0], this[1] - origin[1]);
 	};
 
-	toPolar() {
+	toPolar(): Pt {
 		return new Pt(Math.sqrt(this[0] * this[0] + this[1] * this[1]), Math.atan2(this[1], this[0]));
 	};
 
-	fromPolar() {
+	fromPolar(): Pt {
 		return new Pt(Math.cos(this[1]) * this[0], Math.sin(this[1]) * this[0]);
 	};
 
-	radialAlign() {
+	radialAlign(): number {
 		//rotate object to center, keeping it upright
 
-		var polarPt = this.toPolar(),
+		const polarPt = this.toPolar(),
 			a = polarPt[1] * 360 / 2 / Math.PI;
 
 		if (a > 0) {
@@ -38,27 +38,27 @@
 		}
 	};
 
-	fromLocal(elem: SVGGraphicsElement, doc: HTMLElement) {
+	fromLocal(elem: SVGGraphicsElement, doc: HTMLElement): Pt {
 		//convert local point coordinate to global
 
-		var offset = doc.getBoundingClientRect(),
+		const offset = doc.getBoundingClientRect(),
 			matrix = elem.getScreenCTM();
 
 		return new Pt((this[0] / matrix.a) + (this[1] / matrix.c) - matrix.e + offset.left,
 			(this[0] / matrix.b) + (this[1] / matrix.d) - matrix.f + offset.top);
 	};
 
-	toLocal(elem: SVGGraphicsElement, doc: HTMLElement) {
+	toLocal(elem: SVGGraphicsElement, doc: HTMLElement): Pt {
 		//convert global point coordinate to local
 
-		var offset = doc.getBoundingClientRect(),
+		const offset = doc.getBoundingClientRect(),
 			matrix = elem.getScreenCTM();
 
 		return new Pt((matrix.a * this[0]) + (matrix.c * this[1]) + matrix.e - offset.left,
 			(matrix.b * this[0]) + (matrix.d * this[1]) + matrix.f - offset.top);
 	};
 
-	toString() {
+	toString(): string {
 		return this[0] + ',' + this[1];
 	};
 }

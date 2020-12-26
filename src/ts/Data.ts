@@ -1,6 +1,5 @@
 ﻿import * as TreeNode from './TreeNode';
 import settings from './settings';
-import Pt from './Pt';
 
 import * as d3 from 'd3';
 
@@ -21,17 +20,17 @@ export class Data {
 		this.parseData(xmlDoc);
 	}
 
-	parseData(xmlDoc: Document) {
+	parseData(xmlDoc: Document): void {
 		this.xml = d3.select(xmlDoc);
 
-		var rootFamilyHandle = this.xml.select('family#' + settings.rootFamilyId)
+		const rootFamilyHandle = this.xml.select('family#' + settings.rootFamilyId)
 			.attr('handle');
 
 		this.familiesToDo.set(rootFamilyHandle, { level: 1, sourcePerson: null });
 
 		while (this.familiesToDo.size()) {
-			var familyId = this.familiesToDo.keys()[0],
-				family: TreeNode.Family;
+			const familyId = this.familiesToDo.keys()[0];
+			let family: TreeNode.Family;
 
 			//check whether family is already in the tree?
 			if (this.tree.families.hasOwnProperty(familyId)) {
@@ -46,16 +45,16 @@ export class Data {
 				family = new TreeNode.Family(familyId, this, true);
 			}
 
-			var familyData = this.familiesToDo.get(familyId);
-			var level: number = familyData.level;
-			var sourcePerson = familyData.sourcePerson;
+			const familyData = this.familiesToDo.get(familyId);
+			const level: number = familyData.level;
+			const sourcePerson = familyData.sourcePerson;
 
-			var familyWidth = 360 / (2 ** level);
+			const familyWidth = 360 / (2 ** level);
 
 			if (sourcePerson === null) {
 				family.angle = 180;
 			} else {
-				var sourceIndex = family.parents.findIndex(p => p.handle === sourcePerson.handle);
+				let sourceIndex = family.parents.findIndex(p => p.handle === sourcePerson.handle);
 
 				if (sourceIndex !== -1) {
 					family.angle = sourcePerson.angle + (sourceIndex == 1 ? -1 : 1) * familyWidth / 2;
@@ -125,14 +124,14 @@ export class Data {
 			console.log('families left: ', this.familiesToDo.size());
 		}
 
-		for (var i = 0; i < this.tree.levels.length; i++) {
+		for (let i = 0; i < this.tree.levels.length; i++) {
 			//for people without dates, define a default (average) level date
 			this.tree.levelAvg[i] = new Date(d3.mean(this.tree.levels[i], (el) => el.hasOwnProperty('birth') ? el.birth.valueOf() : null));
 		}
 	}
 
 	//Add sorting info to a parent and the tree
-	addParentSorting(family: TreeNode.Family, parent: TreeNode.Person) {
+	addParentSorting(family: TreeNode.Family, parent: TreeNode.Person): void {
 
 		if (!parent.complete) {
 			//parent not already processed
@@ -179,13 +178,13 @@ export class Tree {
 	families: { [handle: string]: TreeNode.Family } = {};
 	links: Link[] = [];
 	levels: TreeNode.Person[][] = [];
-	maxLevel: number = 0;
+	maxLevel = 0;
 	dateRange: Date[] = [];
 	levelAvg: Date[] = [];
 	nodeList: TreeNode.TreeNode[] = [];
 
 	//Add a person to a level of the graph
-	addToLevel(person: TreeNode.Person, level: number) {
+	addToLevel(person: TreeNode.Person, level: number): void {
 
 		//make sure the list for this level exists before adding a person to it
 		if (typeof this.levels[level] === 'undefined') {
@@ -200,7 +199,7 @@ export class Tree {
 		person.level = level;
 	};
 
-	addToDateRange(d: Date) {
+	addToDateRange(d: Date): void {
 		if (this.dateRange[0]) {
 			this.dateRange[0] = new Date(Math.min(this.dateRange[0].getTime(), d.getTime()));
 		} else {

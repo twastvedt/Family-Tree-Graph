@@ -1,13 +1,6 @@
-/* global require */
-/* global console */
-
-'use strict';
-
 import * as d3 from 'd3';
 
 import settings from './settings';
-
-import Pt from './Pt';
 
 import { Data, Link, Tree } from './Data';
 import * as Nodes from './TreeNode';
@@ -18,15 +11,17 @@ export class Graph {
 	scale: d3.ScaleTime<number, number>;
 	data: Data;
 
-	svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+	svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
+	defs: d3.Selection<SVGDefsElement, unknown, HTMLElement, unknown>;
 
-	main: d3.Selection<SVGGElement, any, HTMLElement, undefined>;
+	main: d3.Selection<SVGGElement, unknown, HTMLElement, unknown>;
 
 	constructor(xmlDoc: Document) {
 
 		this.data = new Data(xmlDoc);
 
 		this.svg = d3.select('body').append('svg:svg');
+		this.defs = this.svg.append('defs');
 
 		//combine people and families to make list of all nodes
 		this.data.tree.nodeList = (<Nodes.TreeNode[]>d3.values(this.data.tree.people)).concat(<Nodes.TreeNode[]>d3.values(this.data.tree.families));
@@ -38,11 +33,13 @@ export class Graph {
 		this.setupGraph();
 	}
 
-	setupGraph() {
-		var width = window.innerWidth - 50,
-			svgNode: any = this.svg.node(),
-			height = window.innerHeight - svgNode.getBoundingClientRect().top - 50,
-			that = this;
+	setupGraph(): void {
+		const width = window.innerWidth - 50,
+			svgNode: SVGElement = this.svg.node(),
+			height = window.innerHeight - svgNode.getBoundingClientRect().top - 50;
+
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
+		const that = this;
 
 		this.svg.attr('width', width);
 		this.svg.attr('height', height);
@@ -50,7 +47,7 @@ export class Graph {
 		this.main = this.svg.append('g')
 			.attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
 			.call(d3.zoom().scaleExtent([1, 8]).on('zoom', () => {
-				var e = d3.event as d3.D3ZoomEvent<SVGGElement, any>;
+				const e = d3.event as d3.D3ZoomEvent<SVGGElement, unknown>;
 				this.setZoom(e.transform);
 			}))
 			.append('g');
@@ -64,13 +61,13 @@ export class Graph {
 		//////////////////////
 		//grid background
 
-		var grid = this.main.append('g')
+		const grid = this.main.append('g')
 			.classed('grid', true);
 
-		for (var i = this.scale.invert(Math.max(width, height)).getFullYear(); i <= moment().year(); i++) {
-			var r = this.scale(new Date(i, 0, 0));
+		for (let i = this.scale.invert(Math.max(width, height)).getFullYear(); i <= moment().year(); i++) {
+			const r = this.scale(new Date(i, 0, 0));
 
-			var circle = grid.append('circle')
+			const circle = grid.append('circle')
 				.classed('level', true)
 				.attr('cx', 0)
 				.attr('cy', 0)
@@ -97,37 +94,37 @@ export class Graph {
 		///////////
 		//draw tree
 
-		var links = this.main.selectAll('.link')
+		const links = this.main.selectAll('.link')
 			.data(this.data.tree.links)
 			.enter().append('line')
 			.attr('class', function (d) {
-				var c = 'link';
+				let c = 'link';
 				if (d.hasOwnProperty('type')) {
 					c += ' ' + d.type;
 				}
 				return c;
 			});
 
-		var nodes = this.main.selectAll<SVGGElement, Nodes.TreeNode>('.node')
+		const nodes = this.main.selectAll<SVGGElement, Nodes.TreeNode>('.node')
 			.data(this.data.tree.nodeList, (d) => d.handle)
 			.enter().append('g')
 			.attr('class', function (d) {
-				var c = 'node ' + (<any>d.constructor).name;
+				let c = 'node ' + d.constructor.name;
 
-				if ((<any>d.constructor).name == 'Person') {
-					var person: Nodes.Person = <Nodes.Person>d;
+				if (d.constructor.name == 'Person') {
+					const person: Nodes.Person = <Nodes.Person>d;
 					c += ' ' + person.gender;
 				}
 				return c;
 			})
 			.attr('id', function (d) { return d.handle; });
 
-		var people: d3.Selection<SVGGElement, Nodes.Person, SVGGElement, any> = this.main.selectAll('.Person');
-		var families: d3.Selection<SVGGElement, Nodes.Family, SVGGElement, any> = this.main.selectAll('.Family');
+		const people: d3.Selection<SVGGElement, Nodes.Person, SVGGElement, unknown> = this.main.selectAll('.Person');
+		const families: d3.Selection<SVGGElement, Nodes.Family, SVGGElement, unknown> = this.main.selectAll('.Family');
 
 		d3.arc()
 
-		var familyArcs = families.append('path')
+		const familyArcs = families.append('path')
 			.classed('familyArc mainPath', true)
 			.classed('estimate', d => d.marriageIsEstimate)
 			.attr('id', function (d) { return d.handle + '-arc'; })
@@ -180,7 +177,7 @@ export class Graph {
 						.attr('y2', that.scale(d.parentIn.marriage))
 				}
 
-				var lifeLine = d3.select(this).append('line') as d3.Selection<SVGLineElement, Nodes.Person, any, unknown>;
+				const lifeLine = d3.select(this).append('line') as d3.Selection<SVGLineElement, Nodes.Person, SVGElement, unknown>;
 
 				lifeLine.classed('life', true)
 					.attr('x1', 0)
@@ -203,7 +200,7 @@ export class Graph {
 		this.setZoom(d3.zoomIdentity);
 	};
 
-	setZoom(transform: d3.ZoomTransform) {
+	setZoom(transform: d3.ZoomTransform): void {
 		this.main.attr('transform', transform.toString());
 
 		this.main.selectAll('text').style('font-size', (settings.layout.textSize / transform.k) + 'px');

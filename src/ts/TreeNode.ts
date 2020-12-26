@@ -75,16 +75,16 @@ export class Person extends TreeNode {
 		}
 	}
 
-	setup(data: Data) {
+	setup(data: Data): void {
 		this.complete = true;
 
-		var person = data.xml.select<HTMLElement>('person[handle=' + this.handle + ']');
+		const person = data.xml.select<HTMLElement>('person[handle=' + this.handle + ']');
 
 		if (!person.empty()) {
 			this.gender = person.select<HTMLElement>('gender').text() == 'M' ? Gender.Male : Gender.Female;
 
 			if (!person.select('parentin').empty()) {
-				let familyHandle = person.select('parentin').attr('hlink');
+				const familyHandle = person.select('parentin').attr('hlink');
 
 				if (!(this.parentIn = data.tree.families[familyHandle])) {
 					this.parentIn = new Family(familyHandle, data, false);
@@ -92,7 +92,7 @@ export class Person extends TreeNode {
 			}
 
 			if (!person.select('childof').empty()) {
-				let familyHandle = person.select('childof').attr('hlink');
+				const familyHandle = person.select('childof').attr('hlink');
 
 				if (!(this.childOf = data.tree.families[familyHandle])) {
 					this.childOf = new Family(familyHandle, data, false);
@@ -102,9 +102,10 @@ export class Person extends TreeNode {
 			this.deathIsEstimate = true;
 			this.birthIsEstimate = true;
 
-			let thisPerson = this;
+			// eslint-disable-next-line @typescript-eslint/no-this-alias
+			const thisPerson = this;
 			person.selectAll<HTMLElement, unknown>('eventref').each(function () {
-				var e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
+				const e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
 
 				if (!e.empty()) {
 					switch (e.select('type').text()) {
@@ -138,7 +139,8 @@ export class Person extends TreeNode {
 			this.firstName = person.select('name').select<HTMLElement>('first').node().innerHTML;
 
 			this.surnames = [];
-			var that = this;
+			// eslint-disable-next-line @typescript-eslint/no-this-alias
+			const that = this;
 
 			person.select('name')
 				.selectAll<HTMLElement, unknown>('surname')
@@ -178,10 +180,10 @@ export class Family extends TreeNode {
 		}
 	}
 
-	setup(data: Data) {
+	setup(data: Data): void {
 		this.complete = true;
 
-		var family = data.xml.select('[handle=' + this.handle + ']');
+		const family = data.xml.select('[handle=' + this.handle + ']');
 
 		if (!family.empty()) {
 
@@ -194,9 +196,10 @@ export class Family extends TreeNode {
 
 			this.marriageIsEstimate = true;
 
-			let thisFamily = this;
+			// eslint-disable-next-line @typescript-eslint/no-this-alias
+			const thisFamily = this;
 			family.selectAll<HTMLElement, unknown>('eventref').each(function () {
-				var e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
+				const e = data.xml.select('event[handle=' + this.getAttribute('hlink') + ']');
 
 				if (!e.empty()) {
 					switch (e.select('type').text()) {
@@ -212,7 +215,7 @@ export class Family extends TreeNode {
 			});
 
 			family.selectAll<HTMLElement, unknown>('childref').each(function () {
-				var handle = this.getAttribute('hlink');
+				const handle = this.getAttribute('hlink');
 
 				if (data.tree.people[handle]) {
 					thisFamily.children.push(data.tree.people[handle]);
@@ -247,7 +250,7 @@ export class Family extends TreeNode {
 				} else {
 					console.log(' Average of indefinite births of parents (+25) and children (-2).');
 
-					var dates: number[] = [];
+					const dates: number[] = [];
 
 					if (this.parents.some(p => p.birth !== undefined)) {
 						dates.push(moment(this.parents
@@ -291,8 +294,8 @@ export class Family extends TreeNode {
 	}
 
 	// path generator for arcs
-	arc(scale: d3.ScaleTime<number, number>) {
-		var start: number,
+	arc(scale: d3.ScaleTime<number, number>): string {
+		let start: number,
 			end: number;
 
 		//keep text upright
@@ -304,11 +307,11 @@ export class Family extends TreeNode {
 			end = this.parents[0].angle;
 		}
 
-		var dTheta = end - start;
+		let dTheta = end - start;
 
 		dTheta += (dTheta > 180) ? -360 : (dTheta < -180) ? 360 : 0;
 
-		var largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
+		const largeArc = (Math.abs(dTheta) > 180) ? 1 : 0,
 			sweep = (dTheta > 0) ? 1 : 0,
 			r = scale(this.marriage);
 
