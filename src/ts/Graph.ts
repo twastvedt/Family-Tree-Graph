@@ -3,8 +3,10 @@ import * as d3 from 'd3';
 import settings from './settings';
 
 import { Data, Link, Tree } from './Data';
-import * as Nodes from './TreeNode';
+import { TreeNode } from './model/TreeNode';
+import { Person } from './model/Person';
 import moment from 'moment';
+import { Family } from './model/Family';
 
 export class Graph {
   scale: d3.ScaleTime<number, number>;
@@ -22,9 +24,9 @@ export class Graph {
     this.defs = this.svg.append('defs');
 
     //combine people and families to make list of all nodes
-    this.data.tree.nodeList = (<Nodes.TreeNode[]>(
+    this.data.tree.nodeList = (<TreeNode[]>(
       d3.values(this.data.tree.people)
-    )).concat(<Nodes.TreeNode[]>d3.values(this.data.tree.families));
+    )).concat(<TreeNode[]>d3.values(this.data.tree.families));
 
     this.scale = d3
       .scaleTime()
@@ -120,7 +122,7 @@ export class Graph {
       });
 
     const nodes = this.main
-      .selectAll<SVGGElement, Nodes.TreeNode>('.node')
+      .selectAll<SVGGElement, TreeNode>('.node')
       .data(this.data.tree.nodeList, (d) => d.handle)
       .enter()
       .append('g')
@@ -128,7 +130,7 @@ export class Graph {
         let c = 'node ' + d.constructor.name;
 
         if (d.constructor.name == 'Person') {
-          const person: Nodes.Person = <Nodes.Person>d;
+          const person: Person = <Person>d;
           c += ' ' + person.gender;
         }
         return c;
@@ -139,13 +141,14 @@ export class Graph {
 
     const people: d3.Selection<
       SVGGElement,
-      Nodes.Person,
+      Person,
       SVGGElement,
       unknown
     > = this.main.selectAll('.Person');
+
     const families: d3.Selection<
       SVGGElement,
-      Nodes.Family,
+      Family,
       SVGGElement,
       unknown
     > = this.main.selectAll('.Family');
@@ -225,7 +228,7 @@ export class Graph {
 
         const lifeLine = d3.select(this).append('line') as d3.Selection<
           SVGLineElement,
-          Nodes.Person,
+          Person,
           SVGElement,
           unknown
         >;

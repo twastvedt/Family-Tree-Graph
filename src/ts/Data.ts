@@ -1,11 +1,14 @@
-﻿import * as TreeNode from './TreeNode';
+﻿import { TreeNode } from './model/TreeNode';
 import settings from './settings';
 
 import * as d3 from 'd3';
+import { Person } from './model/Person';
+import { Family } from './model/Family';
+import { SortRelation } from './model/SortItem';
 
 interface FamilyData {
   level: number;
-  sourcePerson: TreeNode.Person;
+  sourcePerson: Person;
 }
 
 export class Data {
@@ -31,7 +34,7 @@ export class Data {
 
     while (this.familiesToDo.size()) {
       const familyId = this.familiesToDo.keys()[0];
-      let family: TreeNode.Family;
+      let family: Family;
 
       //check whether family is already in the tree?
       if (this.tree.families.hasOwnProperty(familyId)) {
@@ -43,7 +46,7 @@ export class Data {
           family.setup(this);
         }
       } else {
-        family = new TreeNode.Family(familyId, this, true);
+        family = new Family(familyId, this, true);
       }
 
       const familyData = this.familiesToDo.get(familyId);
@@ -137,7 +140,7 @@ export class Data {
           this.tree.links.push({
             source: family,
             target: child,
-            type: TreeNode.SortRelation.Child,
+            type: SortRelation.Child,
           });
         });
 
@@ -155,7 +158,7 @@ export class Data {
   }
 
   //Add sorting info to a parent and the tree
-  addParentSorting(family: TreeNode.Family, parent: TreeNode.Person): void {
+  addParentSorting(family: Family, parent: Person): void {
     if (!parent.complete) {
       //parent not already processed
 
@@ -183,7 +186,7 @@ export class Data {
     this.tree.links.push({
       source: parent,
       target: family,
-      type: TreeNode.SortRelation.Parent,
+      type: SortRelation.Parent,
     });
   }
 }
@@ -193,23 +196,23 @@ enum LinkSource {
 }
 
 export interface Link {
-  source: TreeNode.TreeNode;
-  target: TreeNode.TreeNode;
-  type: TreeNode.SortRelation;
+  source: TreeNode;
+  target: TreeNode;
+  type: SortRelation;
 }
 
 export class Tree {
-  people: { [handle: string]: TreeNode.Person } = {};
-  families: { [handle: string]: TreeNode.Family } = {};
+  people: { [handle: string]: Person } = {};
+  families: { [handle: string]: Family } = {};
   links: Link[] = [];
-  levels: TreeNode.Person[][] = [];
+  levels: Person[][] = [];
   maxLevel = 0;
   dateRange: Date[] = [];
   levelAvg: Date[] = [];
-  nodeList: TreeNode.TreeNode[] = [];
+  nodeList: TreeNode[] = [];
 
   //Add a person to a level of the graph
-  addToLevel(person: TreeNode.Person, level: number): void {
+  addToLevel(person: Person, level: number): void {
     //make sure the list for this level exists before adding a person to it
     if (typeof this.levels[level] === 'undefined') {
       this.levels[level] = [];
