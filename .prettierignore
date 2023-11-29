@@ -2,4 +2,4 @@
 build
 coverage
 dist
-.cache
+.parcel-cache

@@ -1,5 +1,3 @@
-$gray: #bbb;
-
 svg {
   font-size: 14px;
   border: 1px solid #aaa;
@@ -21,7 +19,7 @@ line {
 
 .link,
 .estimate {
-  stroke: $gray;
+  stroke: #bbb;
 }
 
 .mainPath {
