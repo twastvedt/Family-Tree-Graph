@@ -213,4 +213,19 @@ export class Family extends TreeNode {
       + new Pt(r, (end * Math.PI) / 180).fromPolar().toString()
     );
   }
+
+  getRotationChildren(): Iterable<TreeNode> {
+    const familiesToDo = new Map<Family, Person>();
+    const rotationChildren = new Set<TreeNode>([this]);
+
+    for (const parent of this.parents) {
+      if (parent.childOf) {
+        familiesToDo.set(parent.childOf, parent);
+      } else {
+        rotationChildren.add(parent);
+      }
+    }
+
+    return super.getRotationChildren(familiesToDo, rotationChildren);
+  }
 }

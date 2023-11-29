@@ -4,9 +4,10 @@ import settings from './settings';
 
 import { Data, Link, Tree } from './Data';
 import { TreeNode } from './model/TreeNode';
-import { Person } from './model/Person';
+import { Person, PersonSelection } from './model/Person';
 import moment from 'moment';
 import { Family } from './model/Family';
+import { BaseType } from 'd3';
 
 export class Graph {
   scale: d3.ScaleTime<number, number>;
@@ -137,14 +138,30 @@ export class Graph {
       })
       .attr('id', function (d) {
         return d.handle;
+      })
+      .each(function (node) {
+        node.element = this;
+        node.rotationChildren = node.getRotationChildren();
       });
 
-    const people: d3.Selection<
-      SVGGElement,
-      Person,
-      SVGGElement,
-      unknown
-    > = this.main.selectAll('.Person');
+    // Drag nodes.
+    d3.drag<SVGElement, TreeNode>().on('drag', function (dragNode) {
+      const event = d3.event as d3.D3DragEvent<SVGElement, TreeNode, unknown>;
+
+      const startAngle =
+        (Math.atan2(event.y - event.dy, event.x - event.dx) * 180) / Math.PI;
+
+      const delta =
+        (Math.atan2(d3.event.y, d3.event.x) * 180) / Math.PI - startAngle;
+
+      for (const child of dragNode.rotationChildren) {
+        child.angle += delta;
+      }
+    })(nodes);
+
+    const people: PersonSelection = this.main.selectAll<SVGGElement, Person>(
+      '.Person'
+    );
 
     const families: d3.Selection<
       SVGGElement,
@@ -175,7 +192,7 @@ export class Graph {
       .attr('startOffset', '50%')
       .attr('xlink:href', (d) => '#' + d.handle + '-arc');
 
-    // Add text to each person.
+    // Add text and events to each person.
     people
       .append('text')
       .classed('name personName', true)
@@ -249,8 +266,7 @@ export class Graph {
             .classed('birth', true);
         }
 
-        // Rotate into place.
-        d3.select(this).attr('transform', `rotate(${d.angle - 90})`);
+        d.updateRotation();
       });
 
     this.setZoom(d3.zoomIdentity);
@@ -263,5 +279,20 @@ export class Graph {
       .selectAll('text')
       .style('font-size', settings.layout.textSize / transform.k + 'px');
   }
+
+  addLifeGradient(year: number, isBirth: boolean): void {
+    const id = `#radialGradient-${year}-${isBirth}`;
+
+    let gradient = this.svg.select(id);
+
+    if (gradient === undefined) {
+      gradient = this.defs
+        .append('radialGradient')
+        .attr('id', id)
+        .attr('cx', '0')
+        .attr('cy', '0')
+        .attr('y1', '0%')
+        .attr('y2', '100%');
+    }
   }
 }

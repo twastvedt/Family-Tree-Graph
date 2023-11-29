@@ -1,11 +1,32 @@
 ﻿import * as d3 from 'd3';
+import { Family } from './Family';
+import { Person } from './Person';
 
 export class TreeNode {
-  angle: number;
+  _angle: number;
+
+  get angle(): number {
+    return this._angle;
+  }
+
+  set angle(angle: number) {
+    this._angle = angle;
+
+    this.updateRotation();
+  }
+
   level: number;
   complete: boolean;
+  element: SVGElement;
+  rotationChildren: Iterable<TreeNode>;
 
   constructor(public handle: string) {}
+
+  updateRotation(): void {
+    if (this.element) {
+      this.element.setAttribute('transform', `rotate(${this.angle - 90})`);
+    }
+  }
 
   static estimateLifespan(birth: Date, death: Date = undefined): number {
     const interp = d3.scaleLinear().domain([1775, 2019]).range([38, 82]);
@@ -18,9 +39,44 @@ export class TreeNode {
       )(death.getUTCFullYear());
     }
   }
-}
 
-export enum Spouse {
-  Father,
-  Mother,
+  /**
+   * Get all tree nodes that should be rotated if this node is rotated.
+   * (All descendents of ancestors that are not descendents of this node.)
+   * @param families Families to include, and from which to walk the tree.
+   * @param nodes Nodes to include without walking their trees.
+   */
+  getRotationChildren(
+    families: Iterable<[Family, Person]> = [],
+    nodes: Iterable<TreeNode> = [this]
+  ): Iterable<TreeNode> {
+    const rotationChildren = new Set<TreeNode>(nodes);
+    const familiesToDo = new Map<Family, Person>(families);
+
+    for (const [family, sourcePerson] of familiesToDo) {
+      rotationChildren.add(family);
+
+      family.parents
+        .filter((p) => p !== sourcePerson)
+        .forEach((parent) => {
+          rotationChildren.add(parent);
+
+          if (parent.childOf && !familiesToDo.has(parent.childOf)) {
+            familiesToDo.set(parent.childOf, parent);
+          }
+        });
+
+      family.children
+        .filter((p) => p !== sourcePerson)
+        .forEach((child) => {
+          rotationChildren.add(child);
+
+          if (child.parentIn && !familiesToDo.has(child.parentIn)) {
+            familiesToDo.set(child.parentIn, child);
+          }
+        });
+    }
+
+    return rotationChildren;
+  }
 }
