@@ -1,4 +1,6 @@
-﻿interface Settings {
+﻿import settings from './settings.json';
+
+interface Settings {
   rootFamilyId: string;
   dataPath: string;
   layout: {
@@ -8,4 +10,5 @@
   };
 }
 
-export default require('./settings.json') as Settings;
+const settingsTyped: Settings = settings;
+export default settingsTyped;

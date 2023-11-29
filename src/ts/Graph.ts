@@ -26,8 +26,8 @@ export class Graph {
 
     //combine people and families to make list of all nodes
     this.data.tree.nodeList = (<TreeNode[]>(
-      d3.values(this.data.tree.people)
-    )).concat(<TreeNode[]>d3.values(this.data.tree.families));
+      Object.values(this.data.tree.people)
+    )).concat(<TreeNode[]>Object.values(this.data.tree.families));
 
     this.scale = d3
       .scaleTime()
@@ -55,10 +55,9 @@ export class Graph {
         d3
           .zoom()
           .scaleExtent([1, 8])
-          .on('zoom', () => {
-            const e = d3.event as d3.D3ZoomEvent<SVGGElement, unknown>;
+          .on('zoom', (e: d3.D3ZoomEvent<SVGGElement, unknown>) => {
             this.setZoom(e.transform);
-          })
+          }),
       )
       .append('g');
 
@@ -145,30 +144,30 @@ export class Graph {
       });
 
     // Drag nodes.
-    d3.drag<SVGElement, TreeNode>().on('drag', function (dragNode) {
-      const event = d3.event as d3.D3DragEvent<SVGElement, TreeNode, unknown>;
+    d3
+      .drag<SVGElement, TreeNode>()
+      .on(
+        'drag',
+        (event: d3.D3DragEvent<SVGElement, TreeNode, unknown>, dragNode) => {
+          const startAngle =
+            (Math.atan2(event.y - event.dy, event.x - event.dx) * 180) /
+            Math.PI;
 
-      const startAngle =
-        (Math.atan2(event.y - event.dy, event.x - event.dx) * 180) / Math.PI;
+          const delta =
+            (Math.atan2(event.y, event.x) * 180) / Math.PI - startAngle;
 
-      const delta =
-        (Math.atan2(d3.event.y, d3.event.x) * 180) / Math.PI - startAngle;
-
-      for (const child of dragNode.rotationChildren) {
-        child.angle += delta;
-      }
-    })(nodes);
+          for (const child of dragNode.rotationChildren) {
+            child.angle += delta;
+          }
+        },
+      )(nodes);
 
     const people: PersonSelection = this.main.selectAll<SVGGElement, Person>(
-      '.Person'
+      '.Person',
     );
 
-    const families: d3.Selection<
-      SVGGElement,
-      Family,
-      SVGGElement,
-      unknown
-    > = this.main.selectAll('.Family');
+    const families: d3.Selection<SVGGElement, Family, SVGGElement, unknown> =
+      this.main.selectAll('.Family');
 
     d3.arc();
 
@@ -204,7 +203,7 @@ export class Graph {
               'transform',
               `translate(${3 - d.parentOrder * 15}, ${
                 that.scale(d.birth) - 7
-              }) rotate(90)`
+              }) rotate(90)`,
             )
             .classed('reversed', true);
         } else {
@@ -212,7 +211,7 @@ export class Graph {
             'transform',
             `translate(${-3 - (d.parentOrder - 1) * 15}, ${
               that.scale(d.birth) - 7
-            }) rotate(-90)`
+            }) rotate(-90)`,
           );
         }
       });

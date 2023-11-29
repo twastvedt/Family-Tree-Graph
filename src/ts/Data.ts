@@ -1,10 +1,10 @@
 ﻿import { TreeNode } from './model/TreeNode';
 import settings from './settings';
 
-import * as d3 from 'd3';
 import { Person } from './model/Person';
 import { Family } from './model/Family';
 import { SortRelation } from './model/SortItem';
+import { mean, select } from 'd3';
 
 interface FamilyData {
   level: number;
@@ -15,7 +15,7 @@ export class Data {
   tree = new Tree();
 
   //this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
-  familiesToDo = d3.map<FamilyData>();
+  familiesToDo = new Map<string, FamilyData>();
 
   xml: d3.Selection<XMLDocument, unknown, null, undefined>;
 
@@ -24,7 +24,7 @@ export class Data {
   }
 
   parseData(xmlDoc: Document): void {
-    this.xml = d3.select(xmlDoc);
+    this.xml = select(xmlDoc);
 
     const rootFamilyHandle = this.xml
       .select('family#' + settings.rootFamilyId)
@@ -32,14 +32,14 @@ export class Data {
 
     this.familiesToDo.set(rootFamilyHandle, { level: 1, sourcePerson: null });
 
-    while (this.familiesToDo.size()) {
-      const familyId = this.familiesToDo.keys()[0];
+    while (this.familiesToDo.size) {
+      const familyId = this.familiesToDo.keys().next().value;
       let family: Family;
 
       //check whether family is already in the tree?
       if (this.tree.families.hasOwnProperty(familyId)) {
         if (this.tree.families[familyId].complete) {
-          this.familiesToDo.remove(familyId);
+          this.familiesToDo.delete(familyId);
           continue;
         } else {
           family = this.tree.families[familyId];
@@ -59,23 +59,23 @@ export class Data {
         family.angle = 180;
       } else {
         let sourceIndex = family.parents.findIndex(
-          (p) => p.handle === sourcePerson.handle
+          (p) => p.handle === sourcePerson.handle,
         );
 
         if (sourceIndex !== -1) {
           family.angle =
-            sourcePerson.angle
-            + ((sourceIndex == 1 ? -1 : 1) * familyWidth) / 2;
+            sourcePerson.angle +
+            ((sourceIndex == 1 ? -1 : 1) * familyWidth) / 2;
         } else {
           sourceIndex = family.children.findIndex(
-            (p) => p.handle === sourcePerson.handle
+            (p) => p.handle === sourcePerson.handle,
           );
 
           if (sourceIndex !== -1) {
             family.angle =
-              sourcePerson.angle
-              - ((sourceIndex + 1) / (family.children.length + 1)) * familyWidth
-              + familyWidth / 2;
+              sourcePerson.angle -
+              ((sourceIndex + 1) / (family.children.length + 1)) * familyWidth +
+              familyWidth / 2;
           } else {
             throw new Error("Can't find source person in new family!");
           }
@@ -83,7 +83,7 @@ export class Data {
       }
 
       console.log(
-        `familyWidth: ${familyWidth}, family angle: ${family.angle}, level: ${level}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`
+        `familyWidth: ${familyWidth}, family angle: ${family.angle}, level: ${level}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`,
       );
 
       family.level = level;
@@ -91,7 +91,7 @@ export class Data {
       //keep track of how many levels this.data contains, for scaling and graph lines
       this.tree.maxLevel = Math.max(this.tree.maxLevel, level);
 
-      this.familiesToDo.remove(familyId);
+      this.familiesToDo.delete(familyId);
 
       //store data for each parent of family
       family.parents
@@ -120,14 +120,14 @@ export class Data {
           }
 
           child.angle =
-            family.angle
-            - familyWidth / 2
-            + (familyWidth / (family.children.length + 1)) * (i + 1);
+            family.angle -
+            familyWidth / 2 +
+            (familyWidth / (family.children.length + 1)) * (i + 1);
 
           //add child's family to list to do if it hasn't already been processed
           if (
-            child.hasOwnProperty('parentIn')
-            && !this.tree.families.hasOwnProperty(child.parentIn.handle)
+            child.hasOwnProperty('parentIn') &&
+            !this.tree.families.hasOwnProperty(child.parentIn.handle)
           ) {
             this.familiesToDo.set(child.parentIn.handle, {
               level: child.level,
@@ -144,15 +144,15 @@ export class Data {
           });
         });
 
-      console.log('families left: ', this.familiesToDo.size());
+      console.log('families left: ', this.familiesToDo.size);
     }
 
     for (let i = 0; i < this.tree.levels.length; i++) {
       //for people without dates, define a default (average) level date
       this.tree.levelAvg[i] = new Date(
-        d3.mean(this.tree.levels[i], (el) =>
-          el.hasOwnProperty('birth') ? el.birth.valueOf() : null
-        )
+        mean(this.tree.levels[i], (el) =>
+          el.hasOwnProperty('birth') ? el.birth.valueOf() : null,
+        ),
       );
     }
   }
@@ -172,9 +172,9 @@ export class Data {
 
     //add parent's family to list to do if it hasn't already been processed
     if (
-      parent.hasOwnProperty('childOf')
-      && (!this.tree.families.hasOwnProperty(parent.childOf.handle)
-        || !this.tree.families[parent.childOf.handle].complete)
+      parent.hasOwnProperty('childOf') &&
+      (!this.tree.families.hasOwnProperty(parent.childOf.handle) ||
+        !this.tree.families[parent.childOf.handle].complete)
     ) {
       this.familiesToDo.set(parent.childOf.handle, {
         level: parent.level + 1,
@@ -229,7 +229,7 @@ export class Tree {
   addToDateRange(d: Date): void {
     if (this.dateRange[0]) {
       this.dateRange[0] = new Date(
-        Math.min(this.dateRange[0].getTime(), d.getTime())
+        Math.min(this.dateRange[0].getTime(), d.getTime()),
       );
     } else {
       this.dateRange[0] = d;
@@ -237,7 +237,7 @@ export class Tree {
 
     if (this.dateRange[1]) {
       this.dateRange[1] = new Date(
-        Math.max(this.dateRange[1].getTime(), d.getTime())
+        Math.max(this.dateRange[1].getTime(), d.getTime()),
       );
     } else {
       this.dateRange[1] = d;
