@@ -3,7 +3,7 @@ import { Data } from '../Data';
 import { TreeNode } from './TreeNode';
 import { Person } from './Person';
 
-import moment from 'moment';
+import { DateTime } from 'luxon';
 
 export class Family extends TreeNode {
   parents: Person[] = [];
@@ -37,12 +37,12 @@ export class Family extends TreeNode {
     if (!family.empty()) {
       if (!family.select('father').empty()) {
         this.parents.push(
-          new Person(family.select('father').attr('hlink'), data)
+          new Person(family.select('father').attr('hlink'), data),
         );
       }
       if (!family.select('mother').empty()) {
         this.parents.push(
-          new Person(family.select('mother').attr('hlink'), data)
+          new Person(family.select('mother').attr('hlink'), data),
         );
       }
 
@@ -52,7 +52,7 @@ export class Family extends TreeNode {
       const thisFamily = this;
       family.selectAll<HTMLElement, unknown>('eventref').each(function () {
         const e = data.xml.select(
-          'event[handle=' + this.getAttribute('hlink') + ']'
+          'event[handle=' + this.getAttribute('hlink') + ']',
         );
 
         if (!e.empty()) {
@@ -90,54 +90,54 @@ export class Family extends TreeNode {
         if (this.children.some((c) => !c.birthIsEstimate)) {
           console.log(' 2 years before earliest definite birth of child.');
 
-          this.marriage = moment(
+          this.marriage = DateTime.fromJSDate(
             this.children
               .filter((p) => !p.birthIsEstimate)
               .map((p) => p.birth)
-              .reduce((a, b) => (a < b ? a : b))
+              .reduce((a, b) => (a < b ? a : b)),
           )
-            .subtract(2, 'year')
-            .toDate();
+            .minus({ years: 2 })
+            .toJSDate();
         } else if (this.parents.some((c) => !c.birthIsEstimate)) {
           console.log(' 25 years after average definite birth of parents.');
 
-          this.marriage = moment(
+          this.marriage = DateTime.fromMillis(
             this.parents
               .filter((p) => !p.birthIsEstimate)
               .map((p) => p.birth.getUTCMilliseconds())
-              .reduce((a, b, i) => (a * i + b) / (i + 1))
+              .reduce((a, b, i) => (a * i + b) / (i + 1)),
           )
-            .add(25, 'year')
-            .toDate();
+            .plus({ years: 25 })
+            .toJSDate();
         } else {
           console.log(
-            ' Average of indefinite births of parents (+25) and children (-2).'
+            ' Average of indefinite births of parents (+25) and children (-2).',
           );
 
           const dates: number[] = [];
 
           if (this.parents.some((p) => p.birth !== undefined)) {
             dates.push(
-              moment(
+              DateTime.fromMillis(
                 this.parents
                   .filter((p) => p.birth !== undefined)
                   .map((p) => p.birth.getUTCMilliseconds())
-                  .reduce((a, b, i) => (a * i + b) / (i + 1))
+                  .reduce((a, b, i) => (a * i + b) / (i + 1)),
               )
-                .add(25, 'year')
-                .valueOf()
+                .plus({ years: 25 })
+                .valueOf(),
             );
           }
 
           if (this.children.some((c) => c.birth !== undefined)) {
             dates.push(
-              moment(
+              DateTime.fromJSDate(
                 this.children
                   .map((c) => c.birth)
-                  .reduce((a, b) => (a < b ? a : b))
+                  .reduce((a, b) => (a < b ? a : b)),
               )
-                .subtract(2, 'year')
-                .valueOf()
+                .minus({ years: 2 })
+                .valueOf(),
             );
           }
 
@@ -146,7 +146,7 @@ export class Family extends TreeNode {
           }
 
           this.marriage = new Date(
-            dates.reduce((t, d) => t + d) / dates.length
+            dates.reduce((t, d) => t + d) / dates.length,
           );
         }
 
@@ -156,21 +156,23 @@ export class Family extends TreeNode {
       this.parents
         .filter((p) => p.birthIsEstimate && p.deathIsEstimate)
         .forEach((p) => {
-          p.birth = moment(this.marriage).subtract(25, 'year').toDate();
-          p.death = moment(p.birth)
-            .add(TreeNode.estimateLifespan(p.birth), 'year')
-            .toDate();
+          p.birth = DateTime.fromJSDate(this.marriage)
+            .minus({ years: 25 })
+            .toJSDate();
+          p.death = DateTime.fromJSDate(p.birth)
+            .plus({ years: TreeNode.estimateLifespan(p.birth) })
+            .toJSDate();
         });
 
       this.children
         .filter((c) => c.birthIsEstimate && c.deathIsEstimate)
         .forEach((c, i) => {
-          c.birth = moment(this.marriage)
-            .add(2 + i * 2, 'year')
-            .toDate();
-          c.death = moment(c.birth)
-            .add(TreeNode.estimateLifespan(c.birth), 'year')
-            .toDate();
+          c.birth = DateTime.fromJSDate(this.marriage)
+            .plus({ years: 2 + i * 2 })
+            .toJSDate();
+          c.death = DateTime.fromJSDate(c.birth)
+            .plus({ years: TreeNode.estimateLifespan(c.birth) })
+            .toJSDate();
         });
     } else {
       console.log('Empty family:', this.handle);
@@ -199,18 +201,18 @@ export class Family extends TreeNode {
       r = scale(this.marriage);
 
     return (
-      'M'
-      + new Pt(r, (start * Math.PI) / 180).fromPolar().toString()
-      + 'A'
-      + r
-      + ','
-      + r
-      + ' 0 '
-      + largeArc
-      + ','
-      + sweep
-      + ' '
-      + new Pt(r, (end * Math.PI) / 180).fromPolar().toString()
+      'M' +
+      new Pt(r, (start * Math.PI) / 180).fromPolar().toString() +
+      'A' +
+      r +
+      ',' +
+      r +
+      ' 0 ' +
+      largeArc +
+      ',' +
+      sweep +
+      ' ' +
+      new Pt(r, (end * Math.PI) / 180).fromPolar().toString()
     );
   }
 

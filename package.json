@@ -6,16 +6,10 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "@types/d3": "7.x",
-    "@types/mousetrap": "^1.6.15",
-    "@types/node": "^20.10.0",
     "d3": "7.x",
-    "eslint-config-prettier": "^9.0.0",
-    "moment": "^2.29.4",
+    "luxon": "^3.4.4",
     "mousetrap": "^1.6.5",
-    "parallelshell": "^3.0.2",
-    "parcel": "^2.10.3",
-    "prettier": "3.1.0"
+    "parcel": "^2.10.3"
   },
   "scripts": {
     "start": "parcel ./src/html/index.html",
@@ -25,9 +19,15 @@
   "devDependencies": {
     "@parcel/validator-typescript": "^2.10.3",
     "@types/d3-drag": "^3.0.7",
+    "@types/d3": "7.x",
+    "@types/luxon": "^3.3.5",
+    "@types/mousetrap": "^1.6.15",
+    "@types/node": "16.x",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
     "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "3.1.0",
     "typescript": "^5.3.2"
   }
 }

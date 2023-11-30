@@ -1,11 +1,11 @@
 import * as d3 from 'd3';
+import { DateTime } from 'luxon';
 
 import settings from './settings';
 
 import { Data, Link, Tree } from './Data';
 import { TreeNode } from './model/TreeNode';
 import { Person, PersonSelection } from './model/Person';
-import moment from 'moment';
 import { Family } from './model/Family';
 import { BaseType } from 'd3';
 
@@ -75,7 +75,7 @@ export class Graph {
 
     for (
       let i = this.scale.invert(Math.max(width, height)).getFullYear();
-      i <= moment().year();
+      i <= DateTime.now().year;
       i++
     ) {
       const r = this.scale(new Date(i, 0, 0));

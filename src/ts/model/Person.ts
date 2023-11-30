@@ -3,7 +3,7 @@ import { Data, Tree } from '../Data';
 import { TreeNode } from './TreeNode';
 import { Name } from './Name';
 
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { BaseType } from 'd3';
 
 export type PersonSelection = d3.Selection<
@@ -68,7 +68,7 @@ export class Person extends TreeNode {
     this.complete = true;
 
     const person = data.xml.select<HTMLElement>(
-      'person[handle=' + this.handle + ']'
+      'person[handle=' + this.handle + ']',
     );
 
     if (person.empty()) {
@@ -105,7 +105,7 @@ export class Person extends TreeNode {
     const thisPerson = this;
     person.selectAll<HTMLElement, unknown>('eventref').each(function () {
       const e = data.xml.select(
-        'event[handle=' + this.getAttribute('hlink') + ']'
+        'event[handle=' + this.getAttribute('hlink') + ']',
       );
 
       if (!e.empty()) {
@@ -128,20 +128,20 @@ export class Person extends TreeNode {
 
     if (!this.birthIsEstimate && this.deathIsEstimate) {
       if (
-        moment().diff(this.birth, 'year')
-        > TreeNode.estimateLifespan(undefined, new Date()) * 1.5
+        DateTime.now().diff(DateTime.fromJSDate(this.birth), 'year').years >
+        TreeNode.estimateLifespan(undefined, new Date()) * 1.5
       ) {
         // Unlikely this person is still living.
-        this.death = moment(this.birth)
-          .add(TreeNode.estimateLifespan(this.birth))
-          .toDate();
+        this.death = DateTime.fromJSDate(this.birth)
+          .plus(TreeNode.estimateLifespan(this.birth))
+          .toJSDate();
       } else {
         data.tree.dateRange[1] = new Date();
       }
     } else if (this.birthIsEstimate && !this.deathIsEstimate) {
-      this.birth = moment(this.death)
-        .subtract(TreeNode.estimateLifespan(undefined, this.death))
-        .toDate();
+      this.birth = DateTime.fromJSDate(this.death)
+        .minus(TreeNode.estimateLifespan(undefined, this.death))
+        .toJSDate();
     }
 
     this.firstName = person
@@ -158,7 +158,7 @@ export class Person extends TreeNode {
       .selectAll<HTMLElement, unknown>('surname')
       .each(function () {
         that.surnames.push(
-          new Name(this.innerHTML, this.getAttribute('derivation'))
+          new Name(this.innerHTML, this.getAttribute('derivation')),
         );
       });
 
