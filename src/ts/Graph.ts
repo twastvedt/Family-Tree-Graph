@@ -2,12 +2,10 @@ import * as d3 from 'd3';
 import { DateTime } from 'luxon';
 
 import settings from './settings';
-
-import { Data, Link, Tree } from './Data';
+import { Data } from './Data';
 import { TreeNode } from './model/TreeNode';
 import { Person, PersonSelection } from './model/Person';
 import { Family } from './model/Family';
-import { BaseType } from 'd3';
 
 export class Graph {
   scale: d3.ScaleTime<number, number>;
@@ -24,7 +22,7 @@ export class Graph {
     this.svg = d3.select('body').append('svg:svg');
     this.defs = this.svg.append('defs');
 
-    //combine people and families to make list of all nodes
+    // Combine people and families to make list of all nodes
     this.data.tree.nodeList = (<TreeNode[]>(
       Object.values(this.data.tree.people)
     )).concat(<TreeNode[]>Object.values(this.data.tree.families));
@@ -42,7 +40,6 @@ export class Graph {
       svgNode: SVGElement = this.svg.node(),
       height = window.innerHeight - svgNode.getBoundingClientRect().top - 50;
 
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const that = this;
 
     this.svg.attr('width', width);
@@ -69,7 +66,7 @@ export class Graph {
       .attr('height', height);
 
     //////////////////////
-    //grid background
+    // Grid background
 
     const grid = this.main.append('g').classed('grid', true);
 
@@ -106,7 +103,7 @@ export class Graph {
     }
 
     ///////////
-    //draw tree
+    // Draw tree
 
     const links = this.main
       .selectAll('.link')
@@ -168,8 +165,6 @@ export class Graph {
 
     const families: d3.Selection<SVGGElement, Family, SVGGElement, unknown> =
       this.main.selectAll('.Family');
-
-    d3.arc();
 
     const familyArcs = families
       .append('path')

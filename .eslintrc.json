@@ -9,8 +9,7 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "prettier",
-    "prettier/@typescript-eslint"
+    "prettier"
   ],
   "globals": {
     "Atomics": "readonly",
@@ -21,6 +20,7 @@
     "sourceType": "module"
   },
   "rules": {
-    "no-prototype-builtins": "off"
+    "no-prototype-builtins": "off",
+    "@typescript-eslint/no-this-alias": "off"
   }
 }
