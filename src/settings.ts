@@ -7,6 +7,7 @@ interface Settings {
     ringSpacing: number;
     width: number;
     textSize: number;
+    maxYear: number;
   };
 }
 

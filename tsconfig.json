@@ -1,14 +1,12 @@
 {
-  "compilerOptions": {
-    "sourceMap": true,
-    "removeComments": true,
-    "moduleResolution": "Node",
-    "allowSyntheticDefaultImports": true,
-    "noImplicitAny": true,
-    "target": "ESNext",
-    "isolatedModules": true,
-    "resolveJsonModule": true,
-    "lib": ["ESNext", "dom"]
-  },
-  "include": ["src/**/*"]
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ],
+  "compilerOptions": { "resolveJsonModule": true }
 }

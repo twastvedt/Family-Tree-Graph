@@ -1,13 +1,3 @@
-svg {
-  font-size: 14px;
-  border: 1px solid #aaa;
-}
-
-.label {
-  font-size: 75%;
-  text-anchor: middle;
-}
-
 path,
 circle,
 line {
@@ -24,27 +14,6 @@ line {
 
 .mainPath {
   stroke-width: 2px;
-}
-
-.birth {
-  fill: black;
-  stroke: none;
-}
-
-circle.level {
-  stroke: #bbb;
-
-  &.level-1 {
-    stroke-width: 0.125px;
-  }
-
-  &.level-10 {
-    stroke-width: 0.25px;
-  }
-
-  &.level-50 {
-    stroke-width: 0.5px;
-  }
 }
 
 button {
@@ -68,12 +37,4 @@ button {
 .overlay {
   fill: none;
   pointer-events: all;
-}
-
-.familyName {
-  text-anchor: middle;
-}
-
-.personName.reversed {
-  text-anchor: end;
 }

@@ -1,0 +1,10 @@
+{
+  "rootFamilyId": "F0000",
+  "dataPath": "./data/family-tree.xml",
+  "layout": {
+    "ringSpacing": 75,
+    "width": 1000,
+    "textSize": 12,
+    "maxYear": 2020
+  }
+}

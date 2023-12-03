@@ -1,10 +1,10 @@
 import { Family } from './Family';
-import { Data, Tree } from '../Data';
+import { Data } from './Data';
 import { TreeNode } from './TreeNode';
 import { Name } from './Name';
 
 import { DateTime } from 'luxon';
-import { BaseType } from 'd3';
+import type { BaseType } from 'd3';
 
 export type PersonSelection = d3.Selection<
   SVGGElement,
@@ -24,19 +24,20 @@ export enum Spouse {
 }
 
 export class Person extends TreeNode {
-  gender: Gender;
-  parentIn: Family;
-  childOf: Family;
+  angle = 0;
+  gender?: Gender;
+  parentIn?: Family;
+  childOf?: Family;
 
-  parentOrder: number;
+  parentOrder?: number;
 
-  birth: Date;
-  birthIsEstimate: boolean;
-  death: Date;
-  deathIsEstimate: boolean;
+  birth?: Date;
+  birthIsEstimate?: boolean;
+  death?: Date;
+  deathIsEstimate?: boolean;
 
-  firstName: string;
-  surnames: Name[];
+  firstName?: string;
+  surnames?: Name[];
 
   /**
    * Get all data from the xml related to one person
@@ -126,28 +127,8 @@ export class Person extends TreeNode {
       }
     });
 
-    if (!this.birthIsEstimate && this.deathIsEstimate) {
-      if (
-        DateTime.now().diff(DateTime.fromJSDate(this.birth), 'year').years >
-        TreeNode.estimateLifespan(undefined, new Date()) * 1.5
-      ) {
-        // Unlikely this person is still living.
-        this.death = DateTime.fromJSDate(this.birth)
-          .plus(TreeNode.estimateLifespan(this.birth))
-          .toJSDate();
-      } else {
-        data.tree.dateRange[1] = new Date();
-      }
-    } else if (this.birthIsEstimate && !this.deathIsEstimate) {
-      this.birth = DateTime.fromJSDate(this.death)
-        .minus(TreeNode.estimateLifespan(undefined, this.death))
-        .toJSDate();
-    }
-
-    this.firstName = person
-      .select('name')
-      .select<HTMLElement>('first')
-      .node().innerHTML;
+    this.firstName = person.select('name').select<HTMLElement>('first').node()
+      ?.innerHTML;
 
     this.surnames = [];
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -157,10 +138,15 @@ export class Person extends TreeNode {
       .select('name')
       .selectAll<HTMLElement, unknown>('surname')
       .each(function () {
-        that.surnames.push(
-          new Name(this.innerHTML, this.getAttribute('derivation')),
+        that.surnames?.push(
+          new Name(
+            this.innerHTML,
+            this.getAttribute('derivation') ?? undefined,
+          ),
         );
       });
+
+    this.estimate();
 
     console.log('  ', this.firstName);
   }
@@ -171,5 +157,45 @@ export class Person extends TreeNode {
     }
 
     return super.getRotationChildren([[this.childOf, this]], [this]);
+  }
+
+  estimate() {
+    if (this.birth && this.deathIsEstimate) {
+      // Estimate unknown death from known birth.
+      if (
+        DateTime.now().diff(DateTime.fromJSDate(this.birth), 'year').years >
+        (TreeNode.estimateLifespan(undefined, new Date()) ?? 0 * 1.5)
+      ) {
+        // Unlikely this person is still living.
+        this.death = DateTime.fromJSDate(this.birth)
+          .plus(TreeNode.estimateLifespan(this.birth) ?? 0)
+          .toJSDate();
+      }
+    } else if (this.death && this.birthIsEstimate) {
+      // Estimate unknown birth from death.
+      this.birth = DateTime.fromJSDate(this.death)
+        .minus(TreeNode.estimateLifespan(undefined, this.death) ?? 0)
+        .toJSDate();
+    }
+
+    if (!this.birth && this.parentIn && !this.parentIn.marriageIsEstimate) {
+      // Estimate unknown birth from marriage date.
+      this.birth = DateTime.fromJSDate(this.parentIn.marriage)
+        .minus({ years: 20 })
+        .toJSDate();
+    }
+
+    if (
+      this.childOf &&
+      this.birthIsEstimate &&
+      !this.childOf.marriageIsEstimate
+    ) {
+      // Adjust birth by parents' marriage
+      if (!this.birth || this.birth < this.childOf.marriage) {
+        this.birth = DateTime.fromJSDate(this.childOf.marriage)
+          .plus({ years: 1 })
+          .toJSDate();
+      }
+    }
   }
 }

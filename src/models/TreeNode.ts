@@ -2,40 +2,25 @@
 import { Family } from './Family';
 import { Person } from './Person';
 
-export class TreeNode {
-  _angle: number;
-
-  get angle(): number {
-    return this._angle;
-  }
-
-  set angle(angle: number) {
-    this._angle = angle;
-
-    this.updateRotation();
-  }
-
-  level: number;
-  complete: boolean;
-  element: SVGElement;
-  rotationChildren: Iterable<TreeNode>;
+export abstract class TreeNode {
+  level?: number;
+  complete?: boolean;
+  element?: SVGElement;
+  rotationChildren?: Iterable<TreeNode>;
 
   constructor(public handle: string) {}
 
-  updateRotation(): void {
-    if (this.element) {
-      this.element.setAttribute('transform', `rotate(${this.angle - 90})`);
-    }
-  }
-
-  static estimateLifespan(birth: Date, death: Date = undefined): number {
+  static estimateLifespan(
+    birth: Date | undefined,
+    death: Date | undefined = undefined,
+  ): number | undefined {
     const interp = d3.scaleLinear().domain([1775, 2019]).range([38, 82]);
 
     if (birth !== undefined) {
       return interp(birth.getUTCFullYear());
     } else if (death !== undefined) {
       return interp.domain(
-        interp.domain().map((d, i) => d + interp.range()[i])
+        interp.domain().map((d, i) => d + interp.range()[i]),
       )(death.getUTCFullYear());
     }
   }
@@ -48,7 +33,7 @@ export class TreeNode {
    */
   getRotationChildren(
     families: Iterable<[Family, Person]> = [],
-    nodes: Iterable<TreeNode> = [this]
+    nodes: Iterable<TreeNode> = [this],
   ): Iterable<TreeNode> {
     const rotationChildren = new Set<TreeNode>(nodes);
     const familiesToDo = new Map<Family, Person>(families);
@@ -79,4 +64,6 @@ export class TreeNode {
 
     return rotationChildren;
   }
+
+  abstract estimate(): void;
 }

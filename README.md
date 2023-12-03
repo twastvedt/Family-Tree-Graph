@@ -1,10 +1,30 @@
-## Install
+## Project Setup
 
-1. Install dependencies: `npm i`.
-1. Export an xml file from Gramps to `dist/data/family-tree.xml`.
-1. `npm start`.
+1. Export an xml file from Gramps to `public/data/family-tree.xml`.
 
-_To Do_
+```sh
+npm install
+```
+
+### Compile and Hot-Reload for Development
+
+```sh
+npm run dev
+```
+
+### Type-Check, Compile and Minify for Production
+
+```sh
+npm run build
+```
+
+### Lint with [ESLint](https://eslint.org/)
+
+```sh
+npm run lint
+```
+
+## To Do
 
 1. Fix family arc dragging.
 1. Save drags to file.

@@ -1,43 +1,44 @@
-﻿import { TreeNode } from './model/TreeNode';
-import settings from './settings';
+﻿import settings from '../settings';
 
-import { Person } from './model/Person';
-import { Family } from './model/Family';
-import { SortRelation } from './model/SortItem';
+import { Person } from './Person';
+import { Family } from './Family';
+import { SortRelation } from './SortItem';
 import { mean, select } from 'd3';
+import { Tree } from './Tree';
+import type { TreeNode } from './TreeNode';
 
 interface FamilyData {
   level: number;
-  sourcePerson: Person;
+  sourcePerson?: Person;
 }
 
 export class Data {
   tree = new Tree();
 
   //this map holds a list of families that need to be parsed (key) along with their data: [level, [sorting data]]
-  familiesToDo = new Map<string, FamilyData>();
+  private familiesToDo = new Map<string, FamilyData>();
 
   xml: d3.Selection<XMLDocument, unknown, null, undefined>;
 
   constructor(xmlDoc: Document) {
-    this.parseData(xmlDoc);
-  }
-
-  parseData(xmlDoc: Document): void {
     this.xml = select(xmlDoc);
 
+    this.parseData();
+  }
+
+  private parseData(): void {
     const rootFamilyHandle = this.xml
       .select('family#' + settings.rootFamilyId)
       .attr('handle');
 
-    this.familiesToDo.set(rootFamilyHandle, { level: 1, sourcePerson: null });
+    this.familiesToDo.set(rootFamilyHandle, { level: 1 });
 
     while (this.familiesToDo.size) {
       const familyId = this.familiesToDo.keys().next().value;
       let family: Family;
 
       //check whether family is already in the tree?
-      if (this.tree.families.hasOwnProperty(familyId)) {
+      if (this.tree.families[familyId]) {
         if (this.tree.families[familyId].complete) {
           this.familiesToDo.delete(familyId);
           continue;
@@ -50,20 +51,24 @@ export class Data {
       }
 
       const familyData = this.familiesToDo.get(familyId);
-      const level: number = familyData.level;
+
+      if (!familyData) {
+        throw new Error('Missing family');
+      }
+
+      const level = familyData.level;
       const sourcePerson = familyData.sourcePerson;
 
       const familyWidth = 360 / 2 ** level;
+      let familyCenter = 180;
 
-      if (sourcePerson === null) {
-        family.angle = 180;
-      } else {
+      if (sourcePerson) {
         let sourceIndex = family.parents.findIndex(
           (p) => p.handle === sourcePerson.handle,
         );
 
         if (sourceIndex !== -1) {
-          family.angle =
+          familyCenter =
             sourcePerson.angle +
             ((sourceIndex == 1 ? -1 : 1) * familyWidth) / 2;
         } else {
@@ -72,7 +77,7 @@ export class Data {
           );
 
           if (sourceIndex !== -1) {
-            family.angle =
+            familyCenter =
               sourcePerson.angle -
               ((sourceIndex + 1) / (family.children.length + 1)) * familyWidth +
               familyWidth / 2;
@@ -83,7 +88,7 @@ export class Data {
       }
 
       console.log(
-        `familyWidth: ${familyWidth}, family angle: ${family.angle}, level: ${level}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`,
+        `familyWidth: ${familyWidth}, family angle: ${familyCenter}, level: ${level}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`,
       );
 
       family.level = level;
@@ -97,7 +102,7 @@ export class Data {
       family.parents
         .filter((p) => p !== sourcePerson)
         .forEach((parent, i) => {
-          parent.angle = family.angle + (i - 0.5) * familyWidth;
+          parent.angle = familyCenter + (i - 0.5) * familyWidth;
 
           parent.parentOrder = i;
 
@@ -115,22 +120,19 @@ export class Data {
             child.setup(this);
           }
 
-          if (!child.hasOwnProperty('level')) {
+          if (!child.level) {
             this.tree.addToLevel(child, level - 1);
           }
 
           child.angle =
-            family.angle -
+            familyCenter -
             familyWidth / 2 +
             (familyWidth / (family.children.length + 1)) * (i + 1);
 
           //add child's family to list to do if it hasn't already been processed
-          if (
-            child.hasOwnProperty('parentIn') &&
-            !this.tree.families.hasOwnProperty(child.parentIn.handle)
-          ) {
+          if (child.parentIn && !this.tree.families[child.parentIn.handle]) {
             this.familiesToDo.set(child.parentIn.handle, {
-              level: child.level,
+              level: child.level!,
               // Offset to center of child's family.
               sourcePerson: child,
             });
@@ -150,11 +152,20 @@ export class Data {
     for (let i = 0; i < this.tree.levels.length; i++) {
       //for people without dates, define a default (average) level date
       this.tree.levelAvg[i] = new Date(
-        mean(this.tree.levels[i], (el) =>
-          el.hasOwnProperty('birth') ? el.birth.valueOf() : null,
-        ),
+        mean(this.tree.levels[i], (el) => el.birth?.valueOf()) ?? 0,
       );
     }
+
+    // Combine people and families to make list of all nodes
+    this.tree.nodeList = (<TreeNode[]>Object.values(this.tree.people)).concat(
+      <TreeNode[]>Object.values(this.tree.families),
+    );
+
+    // this.tree.nodeList.forEach((n) => n.estimate());
+
+    this.tree.scale
+      .domain(this.tree.dateRange)
+      .range([settings.layout.width / 2, 0]);
   }
 
   //Add sorting info to a parent and the tree
@@ -166,16 +177,18 @@ export class Data {
 
       parent.setup(this);
     }
-    if (!parent.hasOwnProperty('level')) {
+    if (!parent.level && family.level != undefined) {
       this.tree.addToLevel(parent, family.level);
     }
 
     //add parent's family to list to do if it hasn't already been processed
     if (
-      parent.hasOwnProperty('childOf') &&
-      (!this.tree.families.hasOwnProperty(parent.childOf.handle) ||
-        !this.tree.families[parent.childOf.handle].complete)
+      parent.childOf &&
+      !this.tree.families[parent.childOf.handle]?.complete
     ) {
+      if (parent.level == undefined) {
+        throw new Error('No parent level');
+      }
       this.familiesToDo.set(parent.childOf.handle, {
         level: parent.level + 1,
         sourcePerson: parent,
@@ -188,59 +201,5 @@ export class Data {
       target: family,
       type: SortRelation.Parent,
     });
-  }
-}
-
-enum LinkSource {
-  Family,
-}
-
-export interface Link {
-  source: TreeNode;
-  target: TreeNode;
-  type: SortRelation;
-}
-
-export class Tree {
-  people: { [handle: string]: Person } = {};
-  families: { [handle: string]: Family } = {};
-  links: Link[] = [];
-  levels: Person[][] = [];
-  maxLevel = 0;
-  dateRange: Date[] = [];
-  levelAvg: Date[] = [];
-  nodeList: TreeNode[] = [];
-
-  //Add a person to a level of the graph
-  addToLevel(person: Person, level: number): void {
-    //make sure the list for this level exists before adding a person to it
-    if (typeof this.levels[level] === 'undefined') {
-      this.levels[level] = [];
-    }
-
-    if (person.level && person.level !== level) {
-      this.levels[level].splice(this.levels[level].indexOf(person));
-    }
-
-    this.levels[level].push(person);
-    person.level = level;
-  }
-
-  addToDateRange(d: Date): void {
-    if (this.dateRange[0]) {
-      this.dateRange[0] = new Date(
-        Math.min(this.dateRange[0].getTime(), d.getTime()),
-      );
-    } else {
-      this.dateRange[0] = d;
-    }
-
-    if (this.dateRange[1]) {
-      this.dateRange[1] = new Date(
-        Math.max(this.dateRange[1].getTime(), d.getTime()),
-      );
-    } else {
-      this.dateRange[1] = d;
-    }
   }
 }

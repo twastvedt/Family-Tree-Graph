@@ -19,7 +19,7 @@ export default class Pt {
   toPolar(): Pt {
     return new Pt(
       Math.sqrt(this[0] * this[0] + this[1] * this[1]),
-      Math.atan2(this[1], this[0])
+      Math.atan2(this[1], this[0]),
     );
   }
 
@@ -46,9 +46,13 @@ export default class Pt {
     const offset = doc.getBoundingClientRect(),
       matrix = elem.getScreenCTM();
 
+    if (!matrix) {
+      throw new Error(`Could not get coordinates for ${elem}`);
+    }
+
     return new Pt(
       this[0] / matrix.a + this[1] / matrix.c - matrix.e + offset.left,
-      this[0] / matrix.b + this[1] / matrix.d - matrix.f + offset.top
+      this[0] / matrix.b + this[1] / matrix.d - matrix.f + offset.top,
     );
   }
 
@@ -58,9 +62,13 @@ export default class Pt {
     const offset = doc.getBoundingClientRect(),
       matrix = elem.getScreenCTM();
 
+    if (!matrix) {
+      throw new Error(`Could not get coordinates for ${elem}`);
+    }
+
     return new Pt(
       matrix.a * this[0] + matrix.c * this[1] + matrix.e - offset.left,
-      matrix.b * this[0] + matrix.d * this[1] + matrix.f - offset.top
+      matrix.b * this[0] + matrix.d * this[1] + matrix.f - offset.top,
     );
   }
 
