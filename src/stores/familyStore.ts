@@ -43,5 +43,10 @@ export const useFamilyStore = defineStore('family', () => {
     );
   }
 
-  return { tree, ready, addDrag };
+  function formatDate(date: Date): string {
+    // return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_FULL);
+    return date.getFullYear().toString();
+  }
+
+  return { tree, ready, addDrag, formatDate };
 });

@@ -2,28 +2,28 @@
 import { Family } from '@/models/Family';
 import Pt from '@/models/Pt';
 import { useFamilyStore } from '@/stores/familyStore';
-import { arc } from 'd3';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, toRefs } from 'vue';
 
 const store = useFamilyStore();
 
-const { family } = defineProps<{
+const props = defineProps<{
   family: Family;
 }>();
+const { family } = toRefs(props);
 
 const element = ref<SVGGElement>();
 
 const centerAngle = computed(
   () =>
-    family.parents[0].angle +
-    (family.parents[1].angle - family.parents[0].angle) / 2,
+    family.value.parents[0].angle +
+    (family.value.parents[1].angle - family.value.parents[0].angle) / 2,
 );
 
 const marriageLine = computed(() => {
   const scale = store.tree?.scale;
 
-  let start = family.parents[0].angle;
-  let end = family.parents[1].angle;
+  let start = family.value.parents[0].angle;
+  let end = family.value.parents[1].angle;
 
   //keep text upright
   if (centerAngle.value % 360 <= 180) {
@@ -37,7 +37,7 @@ const marriageLine = computed(() => {
 
     const largeArc = Math.abs(dTheta) > 180 ? 1 : 0,
       sweep = dTheta > 0 ? 1 : 0,
-      r = scale(family.marriage);
+      r = scale(family.value.marriage);
 
     return (
       'M' +
@@ -58,10 +58,10 @@ const marriageLine = computed(() => {
 });
 
 onMounted(() => {
-  family.element = element.value;
-  family.rotationChildren = family.getRotationChildren();
+  family.value.element = element.value;
+  family.value.getRotationChildren();
 
-  store.addDrag(family);
+  store.addDrag(family.value);
 });
 </script>
 <template>
@@ -85,6 +85,14 @@ onMounted(() => {
         {{ family.name }}
       </textPath>
     </text>
+
+    <path class="pointerTarget" :d="marriageLine">
+      <title>
+        {{ family.name }}: {{ family.marriageIsEstimate ? '~' : ''
+        }}{{ store.formatDate(family.marriage) }}
+      </title>
+    </path>
+    />
   </g>
 </template>
 

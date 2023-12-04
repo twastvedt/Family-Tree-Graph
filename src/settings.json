@@ -5,6 +5,7 @@
     "ringSpacing": 75,
     "width": 1000,
     "textSize": 12,
-    "maxYear": 2020
+    "maxYear": 2020,
+    "fadeYears": 15
   }
 }

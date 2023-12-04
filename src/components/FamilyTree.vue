@@ -112,8 +112,6 @@ function setZoom(transform: d3.ZoomTransform): void {
     xmlns:xlink="http://www.w3.org/1999/xlink"
     v-if="family.tree"
   >
-    <rect class="overlay" :width="width" :height="height"></rect>
-
     <g ref="content" class="content">
       <g class="grid">
         <circle
@@ -156,10 +154,6 @@ function setZoom(transform: d3.ZoomTransform): void {
 #map {
   width: 100%;
   height: 100%;
-
-  &:deep(*) {
-    vector-effect: non-scaling-stroke;
-  }
 }
 
 circle.level {
@@ -181,4 +175,33 @@ circle.level {
   font-size: 75%;
   text-anchor: middle;
 }
+</style>
+
+<style>
+path,
+circle,
+line {
+  fill: none;
+  stroke-width: 1px;
+  stroke: black;
+  stroke-linecap: round;
+}
+
+.link,
+.estimate {
+  stroke: #bbb;
+}
+
+.mainPath {
+  stroke-width: 2px;
+}
+.pointerTarget {
+  stroke: transparent;
+  cursor: move;
+  stroke-width: 6px;
+}
+
+/* * {
+    vector-effect: non-scaling-stroke;
+  } */
 </style>

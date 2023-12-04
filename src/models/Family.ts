@@ -1,4 +1,3 @@
-import Pt from './Pt';
 import { Data } from './Data';
 import { TreeNode } from './TreeNode';
 import { Person } from './Person';
@@ -11,7 +10,7 @@ export class Family extends TreeNode {
   marriage!: Date;
   marriageIsEstimate = true;
   children: Person[] = [];
-  name!: string;
+  name = '';
 
   constructor(handle: string, data: Data, doSetup: boolean) {
     super(handle);
@@ -21,8 +20,6 @@ export class Family extends TreeNode {
 
     if (!doSetup) {
       console.log('Family Ref: ' + handle);
-      this.complete = false;
-
       return;
     } else {
       console.log('Family: ' + handle);
@@ -84,7 +81,7 @@ export class Family extends TreeNode {
 
       this.name =
         this.parents
-          .map((p) => p.surnames?.find((n) => n.derivation === 'Taken')?.name)
+          .map((p) => p.surnames.find((n) => n.derivation === 'Taken')?.name)
           .find((n) => n !== undefined) ?? 'Unknown';
 
       this.estimate();

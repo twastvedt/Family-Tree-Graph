@@ -25,19 +25,19 @@ export enum Spouse {
 
 export class Person extends TreeNode {
   angle = 0;
-  gender?: Gender;
-  parentIn?: Family;
-  childOf?: Family;
+  gender = Gender.Female;
+  parentIn?: Family = undefined;
+  childOf?: Family = undefined;
 
-  parentOrder?: number;
+  parentOrder?: number = undefined;
 
-  birth?: Date;
-  birthIsEstimate?: boolean;
-  death?: Date;
-  deathIsEstimate?: boolean;
+  birth?: Date = undefined;
+  birthIsEstimate = true;
+  death: Date | null = null;
+  deathIsEstimate = true;
 
-  firstName?: string;
-  surnames?: Name[];
+  firstName = '';
+  surnames: Name[] = [];
 
   /**
    * Get all data from the xml related to one person
@@ -56,8 +56,6 @@ export class Person extends TreeNode {
     //If called without the xml data, this is just being stored as a reference. We'll set up the person later.
     if (data.xml === null) {
       console.log('Person Ref: ' + handle);
-      this.complete = false;
-
       return;
     } else {
       console.log('Person: ' + handle);
@@ -99,9 +97,6 @@ export class Person extends TreeNode {
       }
     }
 
-    this.deathIsEstimate = true;
-    this.birthIsEstimate = true;
-
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const thisPerson = this;
     person.selectAll<HTMLElement, unknown>('eventref').each(function () {
@@ -127,10 +122,10 @@ export class Person extends TreeNode {
       }
     });
 
-    this.firstName = person.select('name').select<HTMLElement>('first').node()
-      ?.innerHTML;
+    this.firstName =
+      person.select('name').select<HTMLElement>('first').node()?.innerHTML ??
+      '';
 
-    this.surnames = [];
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const that = this;
 
@@ -138,7 +133,7 @@ export class Person extends TreeNode {
       .select('name')
       .selectAll<HTMLElement, unknown>('surname')
       .each(function () {
-        that.surnames?.push(
+        that.surnames.push(
           new Name(
             this.innerHTML,
             this.getAttribute('derivation') ?? undefined,
@@ -168,13 +163,13 @@ export class Person extends TreeNode {
       ) {
         // Unlikely this person is still living.
         this.death = DateTime.fromJSDate(this.birth)
-          .plus(TreeNode.estimateLifespan(this.birth) ?? 0)
+          .plus({ years: TreeNode.estimateLifespan(this.birth) ?? 0 })
           .toJSDate();
       }
     } else if (this.death && this.birthIsEstimate) {
       // Estimate unknown birth from death.
       this.birth = DateTime.fromJSDate(this.death)
-        .minus(TreeNode.estimateLifespan(undefined, this.death) ?? 0)
+        .minus({ years: TreeNode.estimateLifespan(undefined, this.death) ?? 0 })
         .toJSDate();
     }
 

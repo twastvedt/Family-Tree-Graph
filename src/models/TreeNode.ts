@@ -4,7 +4,7 @@ import { Person } from './Person';
 
 export abstract class TreeNode {
   level?: number;
-  complete?: boolean;
+  complete = false;
   element?: SVGElement;
   rotationChildren?: Iterable<TreeNode>;
 
@@ -14,7 +14,7 @@ export abstract class TreeNode {
     birth: Date | undefined,
     death: Date | undefined = undefined,
   ): number | undefined {
-    const interp = d3.scaleLinear().domain([1775, 2019]).range([38, 82]);
+    const interp = d3.scaleLinear().domain([1775, 2019]).range([38, 92]);
 
     if (birth !== undefined) {
       return interp(birth.getUTCFullYear());
@@ -27,7 +27,7 @@ export abstract class TreeNode {
 
   /**
    * Get all tree nodes that should be rotated if this node is rotated.
-   * (All descendents of ancestors that are not descendents of this node.)
+   * (All descendants of ancestors that are not descendants of this node.)
    * @param families Families to include, and from which to walk the tree.
    * @param nodes Nodes to include without walking their trees.
    */
@@ -62,6 +62,7 @@ export abstract class TreeNode {
         });
     }
 
+    this.rotationChildren = rotationChildren;
     return rotationChildren;
   }
 

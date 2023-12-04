@@ -1,21 +1,3 @@
-path,
-circle,
-line {
-  fill: none;
-  stroke-width: 1px;
-  stroke: black;
-  stroke-linecap: round;
-}
-
-.link,
-.estimate {
-  stroke: #bbb;
-}
-
-.mainPath {
-  stroke-width: 2px;
-}
-
 button {
   width: 100px;
   height: 30px;
@@ -32,9 +14,4 @@ button {
 
 .buttons {
   margin: 0 0 10px;
-}
-
-.overlay {
-  fill: none;
-  pointer-events: all;
 }

@@ -8,6 +8,10 @@ interface Settings {
     width: number;
     textSize: number;
     maxYear: number;
+    /**
+     * Size of lifeline gradient, in years, when date of death is uncertain.
+     */
+    fadeYears: number;
   };
 }
 
