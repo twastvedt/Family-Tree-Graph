@@ -4,7 +4,13 @@ import FamilyTree from './components/FamilyTree.vue';
 
 <template>
   <header>
-    <h1>Wastvedt Family Tree</h1>
+    <h1 class="title">Wastvedt Family Tree</h1>
+    <div class="buttons">
+      <button>Upload Gramps xml</button>
+      <button>Reset Settings</button>
+      <button>Export Settings</button>
+      <button>Load Settings</button>
+    </div>
   </header>
 
   <main>
@@ -22,8 +28,8 @@ body {
   overflow: hidden;
 }
 #app {
-  width: 100vw;
   height: 100vh;
+  margin: 4px;
   display: flex;
   flex-direction: column;
 }
@@ -31,6 +37,28 @@ body {
 main {
   flex-grow: 1;
   border: 1px solid black;
-  margin: 4px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+
+  .title {
+    flex-grow: 1;
+  }
+}
+
+button {
+  height: 30px;
+  margin-left: 5px;
+  border-radius: 5px;
+  background: #fff;
+  border: 1px solid #aaa;
+  text-align: center;
+  font-size: 16px;
+
+  &:hover {
+    background: #aaa;
+  }
 }
 </style>

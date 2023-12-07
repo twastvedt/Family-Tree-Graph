@@ -33,7 +33,7 @@ export const useFamilyStore = defineStore('family', () => {
           const delta =
             (Math.atan2(event.y, event.x) * 180) / Math.PI - startAngle;
 
-          for (const child of element.rotationChildren!) {
+          for (const child of element.rotationChildren) {
             if (child instanceof Person) {
               child.angle += delta;
             }

@@ -31,7 +31,7 @@ export class Person extends TreeNode {
 
   parentOrder?: number = undefined;
 
-  birth?: Date = undefined;
+  birth!: Date;
   birthIsEstimate = true;
   death: Date | null = null;
   deathIsEstimate = true;

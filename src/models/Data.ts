@@ -164,7 +164,7 @@ export class Data {
     // this.tree.nodeList.forEach((n) => n.estimate());
 
     this.tree.scale
-      .domain(this.tree.dateRange)
+      .domain([this.tree.dateRange[0], new Date(settings.layout.maxYear, 0)])
       .range([settings.layout.width / 2, 0]);
   }
 
