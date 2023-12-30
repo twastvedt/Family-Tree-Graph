@@ -4,11 +4,13 @@ import { Person } from './Person';
 
 import { DateTime } from 'luxon';
 import { mean } from 'd3';
+import type { DateInfo } from './Tree';
+
+export type DefinedFamily = Family & Required<Pick<Family, 'marriage'>>;
 
 export class Family extends TreeNode {
   parents: Person[] = [];
-  marriage!: Date;
-  marriageIsEstimate = true;
+  marriage?: DateInfo;
   children: Person[] = [];
   name = '';
 
@@ -54,8 +56,10 @@ export class Family extends TreeNode {
         if (!e.empty()) {
           switch (e.select('type').text()) {
             case 'Marriage':
-              thisFamily.marriage = new Date(e.select('dateval').attr('val'));
-              thisFamily.marriageIsEstimate = false;
+              thisFamily.marriage = {
+                date: new Date(e.select('dateval').attr('val')),
+                isEstimate: false,
+              };
               data.tree.addToDateRange(thisFamily.marriage);
               break;
             default:
@@ -90,19 +94,19 @@ export class Family extends TreeNode {
     }
   }
 
-  getRotationChildren(): Iterable<TreeNode> {
+  setRotationChildren(): void {
     const familiesToDo = new Map<Family, Person>([[this, this.children[0]]]);
 
-    return super.getRotationChildren(familiesToDo);
+    return super.setRotationChildren(familiesToDo);
   }
 
   estimate() {
-    if (this.marriageIsEstimate) {
+    if (this.marriage?.isEstimate !== false) {
       console.log('Undefined marriage');
 
       // Don't have an exact date for this marriage - try to estimate.
       const childBirths = this.children
-        .filter((p) => !p.birthIsEstimate && p.birth)
+        .filter((p) => p.birth?.isEstimate === false)
         .map((p) => p.birth!);
       const earliestChild = childBirths.length
         ? childBirths.reduce((a, b) => (a < b ? a : b))
@@ -110,25 +114,27 @@ export class Family extends TreeNode {
 
       const earliestParent = mean(
         this.parents
-          .filter((p) => !p.birthIsEstimate && p.birth)
-          .map((p) => p.birth!.getUTCMilliseconds()),
+          .filter((p) => p.birth?.isEstimate === false)
+          .map((p) => p.birth!.date.getUTCMilliseconds()),
       );
 
-      if (earliestChild) {
-        console.log(' 2 years before earliest definite birth of child.');
+      let marriageDate: Date | undefined;
 
-        this.marriage = DateTime.fromJSDate(earliestChild)
-          .minus({ years: 2 })
+      if (earliestChild) {
+        console.log(' 5 years before earliest definite birth of child.');
+
+        marriageDate = DateTime.fromJSDate(earliestChild.date)
+          .minus({ years: 5 })
           .toJSDate();
       } else if (earliestParent) {
         console.log(' 25 years after average definite birth of parents.');
 
-        this.marriage = DateTime.fromMillis(earliestParent)
+        marriageDate = DateTime.fromMillis(earliestParent)
           .plus({ years: 25 })
           .toJSDate();
       } else {
         console.log(
-          ' Average of indefinite births of parents (+25) and children (-2).',
+          ' Average of indefinite births of parents (+25) and children (-5).',
         );
 
         const dates: number[] = [];
@@ -138,7 +144,7 @@ export class Family extends TreeNode {
             DateTime.fromMillis(
               this.parents
                 .filter((p) => p.birth)
-                .map((p) => p.birth!.getUTCMilliseconds())
+                .map((p) => p.birth!.date.getUTCMilliseconds())
                 .reduce((a, b, i) => (a * i + b) / (i + 1)),
             )
               .plus({ years: 25 })
@@ -151,10 +157,10 @@ export class Family extends TreeNode {
             DateTime.fromJSDate(
               this.children
                 .filter((p) => p.birth)
-                .map((c) => c.birth!)
+                .map((c) => c.birth!.date)
                 .reduce((a, b) => (a < b ? a : b)),
             )
-              .minus({ years: 2 })
+              .minus({ years: 5 })
               .valueOf(),
           );
         }
@@ -163,32 +169,53 @@ export class Family extends TreeNode {
           throw new Error('No data with which to place this marriage date.');
         }
 
-        this.marriage = new Date(dates.reduce((t, d) => t + d) / dates.length);
+        marriageDate = new Date(dates.reduce((t, d) => t + d) / dates.length);
       }
 
-      console.log(` Guessed marriage: ${this.marriage.toString()}`);
+      this.marriage = {
+        date: marriageDate,
+        isEstimate: true,
+      };
+
+      console.log(` Guessed marriage: ${this.marriage.date.toString()}`);
     }
 
     this.parents
-      .filter((p) => p.birthIsEstimate && p.deathIsEstimate)
+      .filter(
+        (p) => p.birth?.isEstimate !== false && p.death?.isEstimate !== false,
+      )
       .forEach((p) => {
-        p.birth = DateTime.fromJSDate(this.marriage)
-          .minus({ years: 25 })
-          .toJSDate();
-        p.death = DateTime.fromJSDate(p.birth)
-          .plus({ years: TreeNode.estimateLifespan(p.birth) })
-          .toJSDate();
+        p.birth = {
+          date: DateTime.fromJSDate(this.marriage!.date)
+            .minus({ years: 25 })
+            .toJSDate(),
+          isEstimate: true,
+        };
+        p.death = {
+          date: DateTime.fromJSDate(p.birth.date)
+            .plus({ years: TreeNode.estimateLifespan(p.birth.date) })
+            .toJSDate(),
+          isEstimate: true,
+        };
       });
 
     this.children
-      .filter((c) => c.birthIsEstimate && c.deathIsEstimate)
+      .filter(
+        (c) => c.birth?.isEstimate !== false && c.death?.isEstimate !== false,
+      )
       .forEach((c, i) => {
-        c.birth = DateTime.fromJSDate(this.marriage)
-          .plus({ years: 2 + i * 2 })
-          .toJSDate();
-        c.death = DateTime.fromJSDate(c.birth)
-          .plus({ years: TreeNode.estimateLifespan(c.birth) })
-          .toJSDate();
+        c.birth = {
+          date: DateTime.fromJSDate(this.marriage!.date)
+            .plus({ years: 2 + i * 2 })
+            .toJSDate(),
+          isEstimate: true,
+        };
+        c.death = {
+          date: DateTime.fromJSDate(c.birth.date)
+            .plus({ years: TreeNode.estimateLifespan(c.birth.date) })
+            .toJSDate(),
+          isEstimate: true,
+        };
       });
   }
 }

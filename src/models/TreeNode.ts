@@ -31,10 +31,10 @@ export abstract class TreeNode {
    * @param families Families to include, and from which to walk the tree.
    * @param nodes Nodes to include without walking their trees.
    */
-  getRotationChildren(
+  setRotationChildren(
     families: Iterable<[Family, Person]> = [],
     nodes: Iterable<TreeNode> = [this],
-  ): Iterable<TreeNode> {
+  ): void {
     const rotationChildren = new Set<TreeNode>(nodes);
     const familiesToDo = new Map<Family, Person>(families);
 
@@ -63,7 +63,6 @@ export abstract class TreeNode {
     }
 
     this.rotationChildren = rotationChildren;
-    return rotationChildren;
   }
 
   abstract estimate(): void;

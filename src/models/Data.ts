@@ -1,11 +1,11 @@
-﻿import settings from '../settings';
-
-import { Person } from './Person';
+﻿import { Person } from './Person';
 import { Family } from './Family';
 import { SortRelation } from './SortItem';
 import { mean, select } from 'd3';
 import { Tree } from './Tree';
 import type { TreeNode } from './TreeNode';
+import { useSettingsStore, type Settings } from '@/stores/settingsStore';
+import { toRef, type Ref } from 'vue';
 
 interface FamilyData {
   level: number;
@@ -19,8 +19,12 @@ export class Data {
   private familiesToDo = new Map<string, FamilyData>();
 
   xml: d3.Selection<XMLDocument, unknown, null, undefined>;
+  settings: Ref<Settings>;
 
   constructor(xmlDoc: Document) {
+    const settingsStore = useSettingsStore();
+    this.settings = toRef(settingsStore.settings);
+
     this.xml = select(xmlDoc);
 
     this.parseData();
@@ -28,7 +32,7 @@ export class Data {
 
   private parseData(): void {
     const rootFamilyHandle = this.xml
-      .select('family#' + settings.rootFamilyId)
+      .select('family#' + this.settings.value.rootFamilyId)
       .attr('handle');
 
     this.familiesToDo.set(rootFamilyHandle, { level: 1 });
@@ -152,8 +156,36 @@ export class Data {
     for (let i = 0; i < this.tree.levels.length; i++) {
       //for people without dates, define a default (average) level date
       this.tree.levelAvg[i] = new Date(
-        mean(this.tree.levels[i], (el) => el.birth?.valueOf()) ?? 0,
+        mean(this.tree.levels[i], (el) => el.birth?.date.valueOf()) ?? 0,
       );
+    }
+
+    // Set overrides
+    for (const node of Object.entries(this.settings.value.overrides.people)) {
+      const person = this.tree.people[node[0]];
+      if (person) {
+        if (node[1].angle != undefined) {
+          person.angle = node[1].angle;
+        }
+        continue;
+      }
+
+      console.warn(`Override for unknown person: ${node[0]}.`);
+    }
+
+    for (const node of Object.entries(this.settings.value.overrides.families)) {
+      const family = this.tree.families[node[0]];
+      if (family) {
+        if (node[1].year != undefined) {
+          family.marriage = {
+            date: new Date(node[1].year, 0, 1),
+            isOverridden: true,
+          };
+        }
+        continue;
+      }
+
+      console.warn(`Override for unknown family: ${node[0]}.`);
     }
 
     // Combine people and families to make list of all nodes
@@ -163,9 +195,7 @@ export class Data {
 
     // this.tree.nodeList.forEach((n) => n.estimate());
 
-    this.tree.scale
-      .domain([this.tree.dateRange[0], new Date(settings.layout.maxYear, 0)])
-      .range([settings.layout.width / 2, 0]);
+    this.tree.updateScale();
   }
 
   //Add sorting info to a parent and the tree

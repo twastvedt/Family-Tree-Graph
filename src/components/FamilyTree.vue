@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useFamilyStore } from '../stores/familyStore';
 import * as d3 from 'd3';
-import settings from '@/settings';
-import { onMounted, ref } from 'vue';
-import { Person } from '@/models/Person';
-import { Family } from '@/models/Family';
+import { onMounted, ref, toRef } from 'vue';
+import { Person, type DefinedPerson } from '@/models/Person';
+import { Family, type DefinedFamily } from '@/models/Family';
 
 import PersonNode from './PersonNode.vue';
 import FamilyNode from './FamilyNode.vue';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 const map = ref<SVGSVGElement>();
 const content = ref<SVGGElement>();
@@ -16,6 +16,8 @@ let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
 let zoomBehavior!: d3.ZoomBehavior<SVGSVGElement, unknown>;
 
 const family = useFamilyStore();
+const settingsStore = useSettingsStore();
+const settings = toRef(settingsStore.settings);
 
 const width = ref(500);
 const height = ref(500);
@@ -38,8 +40,8 @@ const minYear = family.tree.dateRange[0].getFullYear();
 // Draw grid for double the range of dates.
 const years = [
   ...range(
-    minYear - (settings.layout.maxYear - minYear),
-    settings.layout.maxYear,
+    minYear - (settings.value.layout.maxYear - minYear),
+    settings.value.layout.maxYear,
   ),
 ];
 
@@ -59,7 +61,7 @@ onMounted(async (): Promise<void> => {
     return;
   }
 
-  map.value.style.fontSize = `${settings.layout.textSize}px`;
+  map.value.style.fontSize = `${settings.value.layout.textSize}px`;
 
   svg = d3.select(map.value);
 
@@ -119,7 +121,7 @@ function setZoom(transform: d3.ZoomTransform): void {
           :key="y"
           cx="0"
           cy="0"
-          :r="family.tree.scale(new Date(y, 0, 0))"
+          :r="family.tree.scale(new Date(y, 0, 1))"
           :class="levelClass(y)"
           :id="`level-${y}`"
         />
@@ -130,6 +132,7 @@ function setZoom(transform: d3.ZoomTransform): void {
               v-if="y % 50 == 0"
               :xlink:href="`#level-${y}`"
               :startOffset="`${i * 100}%`"
+              :side="(i + 180) % 360 < 180 ? 'left' : 'right'"
             >
               {{ y }}
             </textPath>
@@ -143,9 +146,12 @@ function setZoom(transform: d3.ZoomTransform): void {
         />
       </g>
 
-      <template v-for="n in family.tree.nodeList" :key="n.handle">
-        <PersonNode v-if="n instanceof Person" :person="n" />
-        <FamilyNode v-else-if="n instanceof Family" :family="n" />
+      <template v-for="n in family.tree.people" :key="n.handle">
+        <PersonNode :person="n as DefinedPerson" />
+      </template>
+
+      <template v-for="n in family.tree.families" :key="n.handle">
+        <FamilyNode :family="n as DefinedFamily" />
       </template>
     </g>
   </svg>
@@ -157,7 +163,7 @@ function setZoom(transform: d3.ZoomTransform): void {
 }
 
 circle.level {
-  stroke: #bbb;
+  stroke: v-bind('settings.colors.grid');
 
   &.level-1 {
     stroke-width: 0.125px;
@@ -174,6 +180,7 @@ circle.level {
 .label {
   font-size: 75%;
   text-anchor: middle;
+  fill: v-bind('settings.colors.gridText');
 }
 </style>
 
@@ -187,21 +194,27 @@ line {
   stroke-linecap: round;
 }
 
-.link,
-.estimate {
-  stroke: #bbb;
-}
-
 .mainPath {
   stroke-width: 2px;
 }
+
 .pointerTarget {
   stroke: transparent;
   cursor: move;
   stroke-width: 6px;
+
+  &.slide {
+    cursor: ew-resize;
+  }
+}
+
+.dateDetail {
+  fill: v-bind('settings.colors.gridText');
+  font-size: 27%;
 }
 
 /* * {
     vector-effect: non-scaling-stroke;
   } */
 </style>
+@/settingsStore

@@ -1,15 +1,51 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import FamilyTree from './components/FamilyTree.vue';
+import { useSettingsStore } from './stores/settingsStore';
+
+const settingsStore = useSettingsStore();
+const settingsInput = ref<HTMLInputElement>();
+
+function exportSettings() {
+  var saver = document.createElement('a');
+  var blobURL = (saver.href = URL.createObjectURL(
+      new Blob([JSON.stringify(settingsStore.settings, undefined, 2)]),
+    )),
+    body = document.body;
+
+  saver.download = 'Family tree settings.json';
+
+  body.appendChild(saver);
+  saver.dispatchEvent(new MouseEvent('click'));
+  body.removeChild(saver);
+  URL.revokeObjectURL(blobURL);
+}
+
+async function loadSettings() {
+  const content = await settingsInput.value?.files?.[0].text();
+
+  if (content) {
+    const newSettinggs = JSON.parse(content);
+    settingsStore.reset(newSettinggs);
+  }
+}
 </script>
 
 <template>
   <header>
     <h1 class="title">Wastvedt Family Tree</h1>
     <div class="buttons">
-      <button>Upload Gramps xml</button>
-      <button>Reset Settings</button>
-      <button>Export Settings</button>
-      <button>Load Settings</button>
+      <button disabled>Load Gramps xml</button>
+      <button @click="settingsStore.reset">Reset Settings</button>
+      <button @click="exportSettings">Export Settings</button>
+      <input
+        type="file"
+        ref="settingsInput"
+        accept=".json"
+        @change="loadSettings"
+        style="display: none"
+      />
+      <button @click="() => settingsInput?.click()">Load Settings</button>
     </div>
   </header>
 
@@ -62,3 +98,4 @@ button {
   }
 }
 </style>
+./settingsStore

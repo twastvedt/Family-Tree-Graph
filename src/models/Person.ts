@@ -5,6 +5,7 @@ import { Name } from './Name';
 
 import { DateTime } from 'luxon';
 import type { BaseType } from 'd3';
+import type { DateInfo } from './Tree';
 
 export type PersonSelection = d3.Selection<
   SVGGElement,
@@ -23,6 +24,8 @@ export enum Spouse {
   Mother,
 }
 
+export type DefinedPerson = Person & Required<Pick<Person, 'birth'>>;
+
 export class Person extends TreeNode {
   angle = 0;
   gender = Gender.Female;
@@ -31,10 +34,8 @@ export class Person extends TreeNode {
 
   parentOrder?: number = undefined;
 
-  birth!: Date;
-  birthIsEstimate = true;
-  death: Date | null = null;
-  deathIsEstimate = true;
+  birth?: DateInfo;
+  death?: DateInfo;
 
   firstName = '';
   surnames: Name[] = [];
@@ -107,13 +108,17 @@ export class Person extends TreeNode {
       if (!e.empty()) {
         switch (e.select('type').text()) {
           case 'Birth':
-            thisPerson.birth = new Date(e.select('dateval').attr('val'));
-            thisPerson.birthIsEstimate = false;
+            thisPerson.birth = {
+              date: new Date(e.select('dateval').attr('val')),
+              isEstimate: false,
+            };
             data.tree.addToDateRange(thisPerson.birth);
             break;
           case 'Death':
-            thisPerson.death = new Date(e.select('dateval').attr('val'));
-            thisPerson.deathIsEstimate = false;
+            thisPerson.death = {
+              date: new Date(e.select('dateval').attr('val')),
+              isEstimate: false,
+            };
             data.tree.addToDateRange(thisPerson.death);
             break;
           default:
@@ -146,50 +151,63 @@ export class Person extends TreeNode {
     console.log('  ', this.firstName);
   }
 
-  getRotationChildren(): Iterable<TreeNode> {
+  setRotationChildren(): void {
     if (!this.childOf) {
-      return [];
+      this.rotationChildren = [this];
+      return;
     }
 
-    return super.getRotationChildren([[this.childOf, this]], [this]);
+    super.setRotationChildren([[this.childOf, this]], [this]);
   }
 
   estimate() {
-    if (this.birth && this.deathIsEstimate) {
+    if (this.birth && this.death?.isEstimate) {
       // Estimate unknown death from known birth.
       if (
-        DateTime.now().diff(DateTime.fromJSDate(this.birth), 'year').years >
-        (TreeNode.estimateLifespan(undefined, new Date()) ?? 0 * 1.5)
+        DateTime.now().diff(DateTime.fromJSDate(this.birth.date), 'year')
+          .years > (TreeNode.estimateLifespan(undefined, new Date()) ?? 0 * 1.5)
       ) {
         // Unlikely this person is still living.
-        this.death = DateTime.fromJSDate(this.birth)
-          .plus({ years: TreeNode.estimateLifespan(this.birth) ?? 0 })
+        this.death.date = DateTime.fromJSDate(this.birth.date)
+          .plus({ years: TreeNode.estimateLifespan(this.birth.date) ?? 0 })
           .toJSDate();
       }
-    } else if (this.death && this.birthIsEstimate) {
+    } else if (this.death && this.birth?.isEstimate) {
       // Estimate unknown birth from death.
-      this.birth = DateTime.fromJSDate(this.death)
-        .minus({ years: TreeNode.estimateLifespan(undefined, this.death) ?? 0 })
-        .toJSDate();
-    }
-
-    if (!this.birth && this.parentIn && !this.parentIn.marriageIsEstimate) {
-      // Estimate unknown birth from marriage date.
-      this.birth = DateTime.fromJSDate(this.parentIn.marriage)
-        .minus({ years: 20 })
+      this.birth.date = DateTime.fromJSDate(this.death.date)
+        .minus({
+          years: TreeNode.estimateLifespan(undefined, this.death.date) ?? 0,
+        })
         .toJSDate();
     }
 
     if (
+      !this.birth &&
+      this.parentIn &&
+      this.parentIn.marriage?.isEstimate === false
+    ) {
+      // Estimate unknown birth from marriage date.
+      this.birth = {
+        date: DateTime.fromJSDate(this.parentIn.marriage.date)
+          .minus({ years: 25 })
+          .toJSDate(),
+        isEstimate: true,
+      };
+    }
+
+    if (
       this.childOf &&
-      this.birthIsEstimate &&
-      !this.childOf.marriageIsEstimate
+      this.birth?.isEstimate !== false &&
+      this.childOf.marriage?.isEstimate === false
     ) {
       // Adjust birth by parents' marriage
-      if (!this.birth || this.birth < this.childOf.marriage) {
-        this.birth = DateTime.fromJSDate(this.childOf.marriage)
-          .plus({ years: 1 })
-          .toJSDate();
+      if (!this.birth || this.birth.date < this.childOf.marriage.date) {
+        this.birth = {
+          date: DateTime.fromJSDate(this.childOf.marriage.date)
+            .plus({ years: 5 })
+            .toJSDate(),
+          isEstimate: true,
+        };
       }
     }
   }

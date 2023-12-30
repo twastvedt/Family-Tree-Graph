@@ -7,5 +7,15 @@
     "textSize": 12,
     "maxYear": 2020,
     "fadeYears": 15
+  },
+  "colors": {
+    "estimate": "#bbb",
+    "familyConnector": "#bbb",
+    "grid": "#bbb",
+    "gridText": "#bbb"
+  },
+  "overrides": {
+    "people": {},
+    "families": {}
   }
 }
