@@ -5,7 +5,7 @@ import { Name } from './Name';
 
 import { DateTime } from 'luxon';
 import type { BaseType } from 'd3';
-import type { DateInfo } from './Tree';
+import { estimable, type DateInfo } from './Tree';
 
 export type PersonSelection = d3.Selection<
   SVGGElement,
@@ -146,8 +146,6 @@ export class Person extends TreeNode {
         );
       });
 
-    this.estimate();
-
     console.log('  ', this.firstName);
   }
 
@@ -161,31 +159,7 @@ export class Person extends TreeNode {
   }
 
   estimate() {
-    if (this.birth && this.death?.isEstimate) {
-      // Estimate unknown death from known birth.
-      if (
-        DateTime.now().diff(DateTime.fromJSDate(this.birth.date), 'year')
-          .years > (TreeNode.estimateLifespan(undefined, new Date()) ?? 0 * 1.5)
-      ) {
-        // Unlikely this person is still living.
-        this.death.date = DateTime.fromJSDate(this.birth.date)
-          .plus({ years: TreeNode.estimateLifespan(this.birth.date) ?? 0 })
-          .toJSDate();
-      }
-    } else if (this.death && this.birth?.isEstimate) {
-      // Estimate unknown birth from death.
-      this.birth.date = DateTime.fromJSDate(this.death.date)
-        .minus({
-          years: TreeNode.estimateLifespan(undefined, this.death.date) ?? 0,
-        })
-        .toJSDate();
-    }
-
-    if (
-      !this.birth &&
-      this.parentIn &&
-      this.parentIn.marriage?.isEstimate === false
-    ) {
+    if (estimable(this.birth) && this.parentIn?.marriage) {
       // Estimate unknown birth from marriage date.
       this.birth = {
         date: DateTime.fromJSDate(this.parentIn.marriage.date)
@@ -195,11 +169,7 @@ export class Person extends TreeNode {
       };
     }
 
-    if (
-      this.childOf &&
-      this.birth?.isEstimate !== false &&
-      this.childOf.marriage?.isEstimate === false
-    ) {
+    if (estimable(this.birth) && this.childOf?.marriage) {
       // Adjust birth by parents' marriage
       if (!this.birth || this.birth.date < this.childOf.marriage.date) {
         this.birth = {
@@ -209,6 +179,36 @@ export class Person extends TreeNode {
           isEstimate: true,
         };
       }
+    }
+
+    if (this.birth && estimable(this.death)) {
+      // Estimate unknown death from known birth.
+      if (
+        DateTime.now().diff(DateTime.fromJSDate(this.birth.date), 'year')
+          .years > (TreeNode.estimateLifespan(undefined, new Date()) ?? 0 * 1.5)
+      ) {
+        // Unlikely this person is still living.
+        this.death = {
+          date: DateTime.fromJSDate(this.birth.date)
+            .plus({ years: TreeNode.estimateLifespan(this.birth.date) ?? 0 })
+            .toJSDate(),
+          isEstimate: true,
+        };
+      }
+    }
+
+    if (!this.birth?.date) {
+      throw new Error(`Could not estimate birth for ${this.handle}.`);
+    }
+  }
+
+  clearEstimates(): void {
+    if (estimable(this.birth)) {
+      delete this.birth;
+    }
+
+    if (estimable(this.death)) {
+      delete this.death;
     }
   }
 }

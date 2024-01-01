@@ -4,7 +4,7 @@ import { Person } from './Person';
 
 import { DateTime } from 'luxon';
 import { mean } from 'd3';
-import type { DateInfo } from './Tree';
+import { estimable, type DateInfo } from './Tree';
 
 export type DefinedFamily = Family & Required<Pick<Family, 'marriage'>>;
 
@@ -87,8 +87,6 @@ export class Family extends TreeNode {
         this.parents
           .map((p) => p.surnames.find((n) => n.derivation === 'Taken')?.name)
           .find((n) => n !== undefined) ?? 'Unknown';
-
-      this.estimate();
     } else {
       throw new Error(`Empty family: ${this.handle}`);
     }
@@ -101,121 +99,95 @@ export class Family extends TreeNode {
   }
 
   estimate() {
-    if (this.marriage?.isEstimate !== false) {
-      console.log('Undefined marriage');
-
-      // Don't have an exact date for this marriage - try to estimate.
-      const childBirths = this.children
-        .filter((p) => p.birth?.isEstimate === false)
-        .map((p) => p.birth!);
-      const earliestChild = childBirths.length
-        ? childBirths.reduce((a, b) => (a < b ? a : b))
-        : undefined;
-
-      const earliestParent = mean(
-        this.parents
-          .filter((p) => p.birth?.isEstimate === false)
-          .map((p) => p.birth!.date.getUTCMilliseconds()),
-      );
-
-      let marriageDate: Date | undefined;
-
-      if (earliestChild) {
-        console.log(' 5 years before earliest definite birth of child.');
-
-        marriageDate = DateTime.fromJSDate(earliestChild.date)
-          .minus({ years: 5 })
-          .toJSDate();
-      } else if (earliestParent) {
-        console.log(' 25 years after average definite birth of parents.');
-
-        marriageDate = DateTime.fromMillis(earliestParent)
-          .plus({ years: 25 })
-          .toJSDate();
-      } else {
-        console.log(
-          ' Average of indefinite births of parents (+25) and children (-5).',
-        );
-
-        const dates: number[] = [];
-
-        if (this.parents.some((p) => p.birth)) {
-          dates.push(
-            DateTime.fromMillis(
-              this.parents
-                .filter((p) => p.birth)
-                .map((p) => p.birth!.date.getUTCMilliseconds())
-                .reduce((a, b, i) => (a * i + b) / (i + 1)),
-            )
-              .plus({ years: 25 })
-              .valueOf(),
-          );
-        }
-
-        if (this.children.some((c) => c.birth)) {
-          dates.push(
-            DateTime.fromJSDate(
-              this.children
-                .filter((p) => p.birth)
-                .map((c) => c.birth!.date)
-                .reduce((a, b) => (a < b ? a : b)),
-            )
-              .minus({ years: 5 })
-              .valueOf(),
-          );
-        }
-
-        if (dates.length == 0) {
-          throw new Error('No data with which to place this marriage date.');
-        }
-
-        marriageDate = new Date(dates.reduce((t, d) => t + d) / dates.length);
-      }
-
-      this.marriage = {
-        date: marriageDate,
-        isEstimate: true,
-      };
-
-      console.log(` Guessed marriage: ${this.marriage.date.toString()}`);
+    if (!estimable(this.marriage)) {
+      return;
     }
 
-    this.parents
-      .filter(
-        (p) => p.birth?.isEstimate !== false && p.death?.isEstimate !== false,
-      )
-      .forEach((p) => {
-        p.birth = {
-          date: DateTime.fromJSDate(this.marriage!.date)
-            .minus({ years: 25 })
-            .toJSDate(),
-          isEstimate: true,
-        };
-        p.death = {
-          date: DateTime.fromJSDate(p.birth.date)
-            .plus({ years: TreeNode.estimateLifespan(p.birth.date) })
-            .toJSDate(),
-          isEstimate: true,
-        };
-      });
+    console.log('Undefined marriage');
 
-    this.children
-      .filter(
-        (c) => c.birth?.isEstimate !== false && c.death?.isEstimate !== false,
-      )
-      .forEach((c, i) => {
-        c.birth = {
-          date: DateTime.fromJSDate(this.marriage!.date)
-            .plus({ years: 2 + i * 2 })
-            .toJSDate(),
-          isEstimate: true,
-        };
-        c.death = {
-          date: DateTime.fromJSDate(c.birth.date)
-            .plus({ years: TreeNode.estimateLifespan(c.birth.date) })
-            .toJSDate(),
-          isEstimate: true,
-        };
-      });
+    // Don't have an exact date for this marriage - try to estimate.
+    const childBirths = this.children
+      .filter((p) => p.birth?.isEstimate === false)
+      .map((p) => p.birth!);
+    const earliestChild = childBirths.length
+      ? childBirths.reduce((a, b) => (a < b ? a : b))
+      : undefined;
+
+    const earliestParent = mean(
+      this.parents
+        .filter((p) => p.birth?.isEstimate === false)
+        .map((p) => p.birth!.date.getUTCMilliseconds()),
+    );
+
+    let marriageDate: Date | undefined;
+
+    if (earliestChild) {
+      console.log(' 5 years before earliest definite birth of child.');
+
+      marriageDate = DateTime.fromJSDate(earliestChild.date)
+        .minus({ years: 5 })
+        .toJSDate();
+    } else if (earliestParent) {
+      console.log(' 25 years after average definite birth of parents.');
+
+      marriageDate = DateTime.fromMillis(earliestParent)
+        .plus({ years: 25 })
+        .toJSDate();
+    } else {
+      console.log(
+        ' Average of indefinite births of parents (+25) and children (-5).',
+      );
+
+      const dates: number[] = [];
+
+      if (this.parents.some((p) => p.birth)) {
+        dates.push(
+          DateTime.fromMillis(
+            this.parents
+              .filter((p) => p.birth)
+              .map((p) => p.birth!.date.getUTCMilliseconds())
+              .reduce((a, b, i) => (a * i + b) / (i + 1)),
+          )
+            .plus({ years: 25 })
+            .valueOf(),
+        );
+      }
+
+      if (this.children.some((c) => c.birth)) {
+        dates.push(
+          DateTime.fromJSDate(
+            this.children
+              .filter((p) => p.birth)
+              .map((c) => c.birth!.date)
+              .reduce((a, b) => (a < b ? a : b)),
+          )
+            .minus({ years: 5 })
+            .valueOf(),
+        );
+      }
+
+      if (dates.length == 0) {
+        throw new Error('No data with which to place this marriage date.');
+      }
+
+      marriageDate = new Date(dates.reduce((t, d) => t + d) / dates.length);
+    }
+
+    this.marriage = {
+      date: marriageDate,
+      isEstimate: true,
+    };
+
+    if (!this.marriage.date) {
+      throw new Error(`Could not estimate marriage date for ${this.handle}.`);
+    }
+
+    console.log(` Guessed marriage: ${this.marriage.date.toString()}`);
+  }
+
+  clearEstimates(): void {
+    if (estimable(this.marriage)) {
+      delete this.marriage;
+    }
   }
 }

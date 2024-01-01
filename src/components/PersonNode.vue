@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { DefinedPerson } from '@/models/Person';
+import { Person, type DefinedPerson } from '@/models/Person';
+import type { TreeNode } from '@/models/TreeNode';
 import { useFamilyStore } from '@/stores/familyStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { DateTime } from 'luxon';
@@ -101,7 +102,9 @@ const mainGradientStops = computed(() => {
 
   return stops;
 });
-const element = ref<SVGGElement>();
+const rotateTarget = ref<SVGGElement>();
+const birthTarget = ref<SVGGElement>();
+const deathTarget = ref<SVGGElement>();
 
 const reversed = computed(() => (person.value.angle + 270) % 360 > 180);
 const reversed90 = computed(() => (person.value.angle + 180) % 360 < 180);
@@ -122,14 +125,6 @@ const dateFlipped = computed(
   () => Boolean(person.value.parentOrder) === reversed90.value,
 );
 
-function dateTransform(date: Date) {
-  return (
-    `translate(${person.value.parentOrder ? 3 : -3}, ${
-      scale(date) + (reversed90.value ? 1 : 1.8)
-    })` + (reversed90.value ? ' rotate(180)' : '')
-  );
-}
-
 const title = computed(() => {
   let text = `${person.value.firstName}: ${
     person.value.birth.isEstimate ? '~' : ''
@@ -143,10 +138,75 @@ const title = computed(() => {
 });
 
 onMounted(() => {
-  person.value.element = element.value;
   person.value.setRotationChildren();
 
-  store.addRotateNode(person.value);
+  if (!rotateTarget.value) {
+    console.error(`No element on ${title.value}.`);
+    return;
+  }
+
+  store.addRotateElement(
+    rotateTarget.value,
+    (delta, event) => {
+      if (event.ctrlKey) {
+        person.value.angle += delta;
+      } else {
+        for (const child of person.value.rotationChildren) {
+          if (child instanceof Person) {
+            child.angle += delta;
+          }
+        }
+      }
+    },
+    (event) => {
+      let modify: Iterable<TreeNode> = [person.value];
+
+      if (!event.ctrlKey) {
+        modify = person.value.rotationChildren;
+      }
+
+      for (const node of modify) {
+        if (node instanceof Person) {
+          settings.value.overrides.people[node.handle] = Object.assign(
+            settings.value.overrides.people[node.handle] ?? {},
+            {
+              angle: node.angle,
+            },
+          );
+        }
+      }
+    },
+  );
+
+  if (birthTarget.value) {
+    store.addScaleElement(
+      birthTarget.value,
+      () => person.value.birth,
+      () => {
+        settings.value.overrides.people[person.value.handle] = Object.assign(
+          settings.value.overrides.people[person.value.handle] ?? {},
+          {
+            birth: person.value.birth.date.getFullYear(),
+          },
+        );
+      },
+    );
+  }
+
+  if (deathTarget.value && person.value.death) {
+    store.addScaleElement(
+      deathTarget.value,
+      () => person.value.death!,
+      () => {
+        settings.value.overrides.people[person.value.handle] = Object.assign(
+          settings.value.overrides.people[person.value.handle] ?? {},
+          {
+            death: person.value.death?.date.getFullYear(),
+          },
+        );
+      },
+    );
+  }
 });
 </script>
 <template>
@@ -186,7 +246,6 @@ onMounted(() => {
   <g
     :class="['node', 'person', person.gender]"
     :id="person.handle"
-    ref="element"
     :transform="`rotate(${person.angle - 90})`"
   >
     <linearGradient
@@ -262,7 +321,8 @@ onMounted(() => {
     />
 
     <line
-      class="pointerTarget"
+      class="pointerTarget rotate"
+      ref="rotateTarget"
       x1="0"
       x2="0"
       :y1="scale(mainPathStart)"
@@ -273,6 +333,30 @@ onMounted(() => {
       </title>
     </line>
     />
+
+    <line
+      v-if="person.birth.isEstimate"
+      class="pointerTarget scale"
+      ref="birthTarget"
+      x1="0"
+      x2="0"
+      :y1="scale(mainPathStart)"
+      :y2="scale(addYears(person.birth.date, halfFade))"
+    >
+      <title>~{{ store.formatDate(person.birth.date) }}</title>
+    </line>
+
+    <line
+      v-if="person.death?.isEstimate"
+      class="pointerTarget scale"
+      ref="deathTarget"
+      x1="0"
+      x2="0"
+      :y1="scale(addYears(person.death.date, -halfFade))"
+      :y2="scale(addYears(person.death.date, halfFade))"
+    >
+      <title>~{{ store.formatDate(person.death.date) }}</title>
+    </line>
   </g>
 </template>
 

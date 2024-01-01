@@ -5,7 +5,6 @@ import { Person } from './Person';
 export abstract class TreeNode {
   level?: number;
   complete = false;
-  element?: SVGElement;
   rotationChildren: Iterable<TreeNode> = [];
 
   constructor(public handle: string) {}
@@ -66,4 +65,5 @@ export abstract class TreeNode {
   }
 
   abstract estimate(): void;
+  abstract clearEstimates(): void;
 }

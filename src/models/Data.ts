@@ -3,7 +3,6 @@ import { Family } from './Family';
 import { SortRelation } from './SortItem';
 import { mean, select } from 'd3';
 import { Tree } from './Tree';
-import type { TreeNode } from './TreeNode';
 import { useSettingsStore, type Settings } from '@/stores/settingsStore';
 import { toRef, type Ref } from 'vue';
 
@@ -161,16 +160,32 @@ export class Data {
     }
 
     // Set overrides
-    for (const node of Object.entries(this.settings.value.overrides.people)) {
-      const person = this.tree.people[node[0]];
+    for (const [handle, override] of Object.entries(
+      this.settings.value.overrides.people,
+    )) {
+      const person = this.tree.people[handle];
       if (person) {
-        if (node[1].angle != undefined) {
-          person.angle = node[1].angle;
+        if (override.angle != undefined) {
+          person.angle = override.angle;
+        }
+        if (override.birth != undefined) {
+          person.birth = {
+            date: new Date(override.birth, 0, 1),
+            isOverridden: true,
+            isEstimate: true,
+          };
+        }
+        if (override.death != undefined) {
+          person.death = {
+            date: new Date(override.death, 0, 1),
+            isOverridden: true,
+            isEstimate: true,
+          };
         }
         continue;
       }
 
-      console.warn(`Override for unknown person: ${node[0]}.`);
+      console.warn(`Override for unknown person: ${handle}.`);
     }
 
     for (const node of Object.entries(this.settings.value.overrides.families)) {
@@ -180,6 +195,7 @@ export class Data {
           family.marriage = {
             date: new Date(node[1].year, 0, 1),
             isOverridden: true,
+            isEstimate: true,
           };
         }
         continue;
@@ -188,12 +204,50 @@ export class Data {
       console.warn(`Override for unknown family: ${node[0]}.`);
     }
 
-    // Combine people and families to make list of all nodes
-    this.tree.nodeList = (<TreeNode[]>Object.values(this.tree.people)).concat(
-      <TreeNode[]>Object.values(this.tree.families),
+    // Compile list of all nodes, ordered by proximity to nodes with known dates.
+
+    const nodes = this.tree.nodeList;
+    nodes.push(
+      ...Object.values(this.tree.people).filter(
+        (p) => p.birth?.isEstimate === false || p.death?.isEstimate === false,
+      ),
+    );
+    nodes.push(
+      ...Object.values(this.tree.families).filter(
+        (f) => f.marriage?.isEstimate === false,
+      ),
     );
 
-    // this.tree.nodeList.forEach((n) => n.estimate());
+    let i = 0;
+    while (i < nodes.length) {
+      const node = nodes[i];
+
+      if (node instanceof Person) {
+        if (
+          node.childOf &&
+          !nodes.some((n) => n.handle === node.childOf!.handle)
+        ) {
+          nodes.push(node.childOf);
+        }
+
+        if (
+          node.parentIn &&
+          !nodes.some((n) => n.handle === node.parentIn!.handle)
+        ) {
+          nodes.push(node.parentIn);
+        }
+      } else if (node instanceof Family) {
+        nodes.push(
+          ...node.children
+            .concat(...node.parents)
+            .filter((c) => !nodes.some((n) => n.handle === c.handle)),
+        );
+      }
+
+      i++;
+    }
+
+    this.tree.estimate();
 
     this.tree.updateScale();
   }

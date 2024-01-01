@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type DefinedFamily } from '@/models/Family';
+import { Person } from '@/models/Person';
 import Pt from '@/models/Pt';
 import { useFamilyStore } from '@/stores/familyStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -16,7 +17,8 @@ const props = defineProps<{
 const { family } = toRefs(props);
 
 const element = ref<SVGGElement>();
-const marriageLine = ref<SVGElement>();
+const lineTarget = ref<SVGElement>();
+const centerTarget = ref<SVGElement>();
 
 const centerAngle = computed(
   () =>
@@ -76,16 +78,47 @@ const marriageLinePath = computed(() => {
   );
 });
 
+const title = computed(() =>
+  family.value.name + ': ' + family.value.marriage.isEstimate
+    ? '~'
+    : '' + familyStore.formatDate(family.value.marriage.date),
+);
+
 onMounted(() => {
-  family.value.element = element.value;
   family.value.setRotationChildren();
 
-  familyStore.addRotateNode(family.value);
+  if (!lineTarget.value || !centerTarget.value) {
+    console.error(`No elements on ${title.value}.`);
+    return;
+  }
+
+  familyStore.addRotateElement(
+    lineTarget.value,
+    (delta) => {
+      for (const child of family.value.rotationChildren) {
+        if (child instanceof Person) {
+          child.angle += delta;
+        }
+      }
+    },
+    () => {
+      for (const node of family.value.rotationChildren) {
+        if (node instanceof Person) {
+          settings.value.overrides.people[node.handle] = Object.assign(
+            settings.value.overrides.people[node.handle] ?? {},
+            {
+              angle: node.angle,
+            },
+          );
+        }
+      }
+    },
+  );
 
   if (family.value.marriage.isEstimate) {
     familyStore.addScaleElement(
-      marriageLine.value!,
-      (year) => (family.value.marriage.date = new Date(year, 0, 0)),
+      centerTarget.value,
+      () => family.value.marriage,
       () => {
         settings.value.overrides.families[family.value.handle] = Object.assign(
           settings.value.overrides.families[family.value.handle] ?? {},
@@ -138,12 +171,18 @@ onMounted(() => {
       </textPath>
     </text>
 
-    <path class="pointerTarget" :d="marriageLinePath" ref="marriageLine">
+    <path class="pointerTarget rotate" :d="marriageLinePath" ref="lineTarget">
       <title>
-        {{ family.name }}: {{ family.marriage.isEstimate ? '~' : ''
-        }}{{ familyStore.formatDate(family.marriage.date) }}
+        {{ title }}
       </title>
     </path>
+
+    <circle
+      class="pointerTarget scale"
+      ref="centerTarget"
+      :cx="Math.cos((centerAngle * Math.PI) / 180) * radius"
+      :cy="Math.sin((centerAngle * Math.PI) / 180) * radius"
+      r="6"
     />
   </g>
 </template>

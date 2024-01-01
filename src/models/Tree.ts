@@ -18,6 +18,10 @@ export interface DateInfo {
   isOverridden?: boolean;
 }
 
+export function estimable(info?: DateInfo) {
+  return !info || (info.isEstimate && !info.isOverridden);
+}
+
 export class Tree {
   people: { [handle: string]: Person } = {};
   families: { [handle: string]: Family } = {};
@@ -66,6 +70,14 @@ export class Tree {
     } else {
       this.dateRange[1] = d.date;
     }
+  }
+
+  estimate() {
+    this.nodeList.forEach((n) => n.estimate());
+  }
+
+  clearEstimates() {
+    this.nodeList.forEach((n) => n.clearEstimates());
   }
 
   updateScale() {
