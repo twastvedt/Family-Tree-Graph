@@ -1,6 +1,5 @@
 {
   "rootFamilyId": "F0000",
-  "dataPath": "./data/family-tree.xml",
   "layout": {
     "ringSpacing": 75,
     "width": 1000,
@@ -8,6 +7,7 @@
     "maxYear": 2020,
     "fadeYears": 15
   },
+  "dateLabels": [90, 270],
   "colors": {
     "estimate": "#bbb",
     "familyConnector": "#bbb",

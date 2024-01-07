@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import FamilyTree from './components/FamilyTree.vue';
 import { useSettingsStore } from './stores/settingsStore';
+import TreeLoader from './components/TreeLoader.vue';
+import { useFamilyStore } from './stores/familyStore';
 
 const settingsStore = useSettingsStore();
+const familyStore = useFamilyStore();
 const settingsInput = ref<HTMLInputElement>();
+const xmlInput = ref<HTMLInputElement>();
 
 function exportSettings() {
   var saver = document.createElement('a');
@@ -21,6 +24,14 @@ function exportSettings() {
   URL.revokeObjectURL(blobURL);
 }
 
+async function loadXml() {
+  const content = await xmlInput.value?.files?.[0].text();
+
+  if (content) {
+    familyStore.loadData(content);
+  }
+}
+
 async function loadSettings() {
   const content = await settingsInput.value?.files?.[0].text();
 
@@ -35,7 +46,14 @@ async function loadSettings() {
   <header>
     <h1 class="title">Wastvedt Family Tree</h1>
     <div class="buttons">
-      <button disabled>Load Gramps xml</button>
+      <input
+        type="file"
+        ref="xmlInput"
+        accept=".xml"
+        @change="loadXml"
+        style="display: none"
+      />
+      <button @click="() => xmlInput?.click()">Load Gramps xml</button>
       <button @click="settingsStore.reset">Reset Settings</button>
       <button @click="exportSettings">Export Settings</button>
       <input
@@ -51,7 +69,7 @@ async function loadSettings() {
 
   <main>
     <Suspense>
-      <FamilyTree />
+      <TreeLoader />
       <template #fallback> Loading... </template>
     </Suspense>
   </main>

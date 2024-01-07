@@ -5,7 +5,7 @@ import { Person } from './Person';
 export abstract class TreeNode {
   level?: number;
   complete = false;
-  rotationChildren: Iterable<TreeNode> = [];
+  rotationChildren: Iterable<Person> = [];
 
   constructor(public handle: string) {}
 
@@ -32,14 +32,15 @@ export abstract class TreeNode {
    */
   setRotationChildren(
     families: Iterable<[Family, Person]> = [],
-    nodes: Iterable<TreeNode> = [this],
+    nodes?: Iterable<Person>,
   ): void {
-    const rotationChildren = new Set<TreeNode>(nodes);
+    const rotationChildren = new Set<Person>(nodes);
+    if (!nodes && this instanceof Person) {
+      rotationChildren.add(this);
+    }
     const familiesToDo = new Map<Family, Person>(families);
 
     for (const [family, sourcePerson] of familiesToDo) {
-      rotationChildren.add(family);
-
       family.parents
         .filter((p) => p !== sourcePerson)
         .forEach((parent) => {

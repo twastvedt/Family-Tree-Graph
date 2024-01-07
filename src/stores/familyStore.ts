@@ -11,15 +11,29 @@ export const useFamilyStore = defineStore('family', () => {
   const tree = ref<Tree>();
 
   const ready = (async () => {
-    const xmlDoc = await xml(settings.settings.dataPath);
-    const data = new Data(xmlDoc);
-    tree.value = data.tree;
+    if (settings.settings.dataPath) {
+      const xmlDoc = await xml(settings.settings.dataPath);
+      const data = new Data(xmlDoc);
+      tree.value = data.tree;
+    }
   })();
+
+  function loadData(xml: string) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'application/xml');
+    const errorNode = doc.querySelector('parsererror');
+    if (errorNode) {
+      throw new Error('Error parsing xml.');
+    }
+
+    const data = new Data(doc);
+    tree.value = data.tree;
+  }
 
   function addRotateElement(
     element: SVGElement,
     setValue: (delta: number, event: PointerEvent) => void,
-    saveValue: (event: PointerEvent) => void,
+    saveValue?: (event: PointerEvent) => void,
   ) {
     select(element).call(
       drag<SVGElement, unknown>()
@@ -39,12 +53,11 @@ export const useFamilyStore = defineStore('family', () => {
         .on(
           'end.rotate',
           (event: d3.D3DragEvent<SVGElement, unknown, unknown>) => {
-            saveValue(event.sourceEvent as PointerEvent);
+            saveValue?.(event.sourceEvent as PointerEvent);
           },
         ),
     );
   }
-
   function addScaleElement(
     element: SVGElement,
     getDateInfo: () => DateInfo,
@@ -78,5 +91,12 @@ export const useFamilyStore = defineStore('family', () => {
     return date.getFullYear().toString();
   }
 
-  return { tree, ready, addRotateElement, addScaleElement, formatDate };
+  return {
+    tree,
+    ready,
+    loadData,
+    addRotateElement,
+    addScaleElement,
+    formatDate,
+  };
 });

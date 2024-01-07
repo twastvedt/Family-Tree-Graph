@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useFamilyStore } from '../stores/familyStore';
 import * as d3 from 'd3';
-import { onMounted, ref, toRef } from 'vue';
-import { Person, type DefinedPerson } from '@/models/Person';
-import { Family, type DefinedFamily } from '@/models/Family';
+import { onMounted, ref, toRef, type ComponentPublicInstance } from 'vue';
+import type { DefinedPerson } from '@/models/Person';
+import type { DefinedFamily } from '@/models/Family';
 
 import PersonNode from './PersonNode.vue';
 import FamilyNode from './FamilyNode.vue';
@@ -11,6 +11,7 @@ import { useSettingsStore } from '@/stores/settingsStore';
 
 const map = ref<SVGSVGElement>();
 const content = ref<SVGGElement>();
+const gridLabels = ref<SVGGElement>();
 
 let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
 let zoomBehavior!: d3.ZoomBehavior<SVGSVGElement, unknown>;
@@ -21,8 +22,6 @@ const settings = toRef(settingsStore.settings);
 
 const width = ref(500);
 const height = ref(500);
-
-await family.ready;
 
 if (!family.tree) {
   throw new Error('Error loading tree');
@@ -45,6 +44,8 @@ const years = [
   ),
 ];
 
+const labelYears = years.filter((y) => y % 50 === 0);
+
 function levelClass(i: number) {
   return {
     level: true,
@@ -53,8 +54,6 @@ function levelClass(i: number) {
     'level-1': i % 10 != 0,
   };
 }
-
-const gridLabelLines = [0.25, 0.75];
 
 onMounted(async (): Promise<void> => {
   if (!map.value || !content.value) {
@@ -68,12 +67,7 @@ onMounted(async (): Promise<void> => {
   width.value = map.value.clientWidth;
   height.value = map.value.clientHeight;
 
-  d3.select(map.value).attr('viewBox', [
-    0,
-    0,
-    width.value,
-    height.value,
-  ] as unknown as string);
+  svg.attr('viewBox', [0, 0, width.value, height.value] as unknown as string);
 
   zoomBehavior = d3
     .zoom<SVGSVGElement, unknown>()
@@ -89,6 +83,14 @@ onMounted(async (): Promise<void> => {
       d3.zoomIdentity.translate(width.value / 2, height.value / 2),
     );
 });
+
+function rotateDate(ref: Element | ComponentPublicInstance | null, i: number) {
+  if (ref instanceof SVGElement) {
+    family.addRotateElement(ref, (delta) => {
+      settings.value.dateLabels[i] += delta;
+    });
+  }
+}
 
 function setZoom(transform: d3.ZoomTransform): void {
   if (
@@ -126,17 +128,25 @@ function setZoom(transform: d3.ZoomTransform): void {
           :id="`level-${y}`"
         />
 
-        <g class="gridLabelLine" v-for="i in gridLabelLines" :key="i">
-          <text class="label" v-for="y in years" :key="y">
-            <textPath
-              v-if="y % 50 == 0"
-              :xlink:href="`#level-${y}`"
-              :startOffset="`${i * 100}%`"
-              :side="(i + 180) % 360 < 180 ? 'left' : 'right'"
-            >
-              {{ y }}
-            </textPath>
-          </text>
+        <g ref="gridLabels">
+          <g
+            class="gridLabelLine"
+            v-for="(angle, i) in settings.dateLabels"
+            :key="i"
+            :ref="(ref) => rotateDate(ref, i)"
+          >
+            <text class="label" v-for="y in labelYears" :key="y">
+              <textPath
+                :xlink:href="`#level-${y}`"
+                :startOffset="`${
+                  ((angle + 180) % 360 < 180 ? angle : 360 - angle) / 3.6
+                }%`"
+                :side="(angle + 180) % 360 < 180 ? 'left' : 'right'"
+              >
+                {{ y }}
+              </textPath>
+            </text>
+          </g>
         </g>
 
         <line

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Person, type DefinedPerson } from '@/models/Person';
-import type { TreeNode } from '@/models/TreeNode';
+import type { DefinedPerson } from '@/models/Person';
 import { useFamilyStore } from '@/stores/familyStore';
-import { useSettingsStore } from '@/stores/settingsStore';
+import { useSettingsStore, type PersonOverride } from '@/stores/settingsStore';
 import { DateTime } from 'luxon';
 import { computed, onMounted, ref, toRef, toRefs } from 'vue';
 
@@ -137,6 +136,31 @@ const title = computed(() => {
   return text;
 });
 
+function clearAngle(e: MouseEvent) {
+  if (e.altKey) {
+    if (e.shiftKey) {
+      delete settings.value.overrides.people[person.value.handle]?.angle;
+    } else {
+      for (const node of person.value.rotationChildren) {
+        delete settings.value.overrides.people[node.handle]?.angle;
+      }
+    }
+    e.stopPropagation();
+    location.reload();
+  }
+}
+
+function clearDate(e: MouseEvent, remove: (override: PersonOverride) => void) {
+  if (e.altKey) {
+    const override = settings.value.overrides.people[person.value.handle];
+    if (override) {
+      remove(override);
+    }
+    e.stopPropagation();
+    location.reload();
+  }
+}
+
 onMounted(() => {
   person.value.setRotationChildren();
 
@@ -148,32 +172,26 @@ onMounted(() => {
   store.addRotateElement(
     rotateTarget.value,
     (delta, event) => {
-      if (event.ctrlKey) {
+      if (event.shiftKey) {
         person.value.angle += delta;
       } else {
         for (const child of person.value.rotationChildren) {
-          if (child instanceof Person) {
-            child.angle += delta;
-          }
+          child.angle += delta;
         }
       }
     },
     (event) => {
-      let modify: Iterable<TreeNode> = [person.value];
-
-      if (!event.ctrlKey) {
-        modify = person.value.rotationChildren;
-      }
+      const modify = event.shiftKey
+        ? [person.value]
+        : person.value.rotationChildren;
 
       for (const node of modify) {
-        if (node instanceof Person) {
-          settings.value.overrides.people[node.handle] = Object.assign(
-            settings.value.overrides.people[node.handle] ?? {},
-            {
-              angle: node.angle,
-            },
-          );
-        }
+        settings.value.overrides.people[node.handle] = Object.assign(
+          settings.value.overrides.people[node.handle] ?? {},
+          {
+            angle: node.angle,
+          },
+        );
       }
     },
   );
@@ -327,6 +345,7 @@ onMounted(() => {
       x2="0"
       :y1="scale(mainPathStart)"
       :y2="scale(person.death?.date ?? new Date())"
+      @click="clearAngle"
     >
       <title>
         {{ title }}
@@ -342,6 +361,7 @@ onMounted(() => {
       x2="0"
       :y1="scale(mainPathStart)"
       :y2="scale(addYears(person.birth.date, halfFade))"
+      @click="(e) => clearDate(e, (o) => delete o.birth)"
     >
       <title>~{{ store.formatDate(person.birth.date) }}</title>
     </line>
@@ -354,6 +374,7 @@ onMounted(() => {
       x2="0"
       :y1="scale(addYears(person.death.date, -halfFade))"
       :y2="scale(addYears(person.death.date, halfFade))"
+      @click="(e) => clearDate(e, (o) => delete o.death)"
     >
       <title>~{{ store.formatDate(person.death.date) }}</title>
     </line>

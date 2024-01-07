@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type DefinedFamily } from '@/models/Family';
-import { Person } from '@/models/Person';
 import Pt from '@/models/Pt';
 import { useFamilyStore } from '@/stores/familyStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -84,6 +83,24 @@ const title = computed(() =>
     : '' + familyStore.formatDate(family.value.marriage.date),
 );
 
+function clearAngle(e: MouseEvent) {
+  if (e.altKey) {
+    for (const node of family.value.rotationChildren) {
+      delete settings.value.overrides.people[node.handle]?.angle;
+    }
+    e.stopPropagation();
+    location.reload();
+  }
+}
+
+function clearDate(e: MouseEvent) {
+  if (e.altKey) {
+    delete settings.value.overrides.families[family.value.handle]?.year;
+    e.stopPropagation();
+    location.reload();
+  }
+}
+
 onMounted(() => {
   family.value.setRotationChildren();
 
@@ -96,21 +113,17 @@ onMounted(() => {
     lineTarget.value,
     (delta) => {
       for (const child of family.value.rotationChildren) {
-        if (child instanceof Person) {
-          child.angle += delta;
-        }
+        child.angle += delta;
       }
     },
     () => {
       for (const node of family.value.rotationChildren) {
-        if (node instanceof Person) {
-          settings.value.overrides.people[node.handle] = Object.assign(
-            settings.value.overrides.people[node.handle] ?? {},
-            {
-              angle: node.angle,
-            },
-          );
-        }
+        settings.value.overrides.people[node.handle] = Object.assign(
+          settings.value.overrides.people[node.handle] ?? {},
+          {
+            angle: node.angle,
+          },
+        );
       }
     },
   );
@@ -132,12 +145,7 @@ onMounted(() => {
 });
 </script>
 <template>
-  <g
-    v-if="familyStore.tree"
-    class="node family"
-    :id="family.handle"
-    ref="element"
-  >
+  <g class="node family" :id="family.handle" ref="element">
     <text
       v-if="!family.marriage.isEstimate && dateAngle != undefined"
       :dy="reversed ? -3.5 : 5.6"
@@ -171,7 +179,12 @@ onMounted(() => {
       </textPath>
     </text>
 
-    <path class="pointerTarget rotate" :d="marriageLinePath" ref="lineTarget">
+    <path
+      class="pointerTarget rotate"
+      :d="marriageLinePath"
+      ref="lineTarget"
+      @click="clearAngle"
+    >
       <title>
         {{ title }}
       </title>
@@ -183,6 +196,7 @@ onMounted(() => {
       :cx="Math.cos((centerAngle * Math.PI) / 180) * radius"
       :cy="Math.sin((centerAngle * Math.PI) / 180) * radius"
       r="6"
+      @click="clearDate"
     />
   </g>
 </template>

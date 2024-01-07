@@ -2,19 +2,19 @@
 import settings from '../settings.json';
 import { defineStore } from 'pinia';
 
-interface PersonOverride {
+export interface PersonOverride {
   angle?: number;
   birth?: number;
   death?: number;
 }
 
-interface FamilyOverride {
+export interface FamilyOverride {
   year?: number;
 }
 
 export interface Settings {
   rootFamilyId: string;
-  dataPath: string;
+  dataPath?: string;
   layout: {
     ringSpacing: number;
     width: number;
@@ -25,6 +25,10 @@ export interface Settings {
      */
     fadeYears: number;
   };
+  /**
+   * Angle of each line of date labels.
+   */
+  dateLabels: number[];
   colors: {
     estimate: string;
     familyConnector: string;
