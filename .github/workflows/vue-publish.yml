@@ -37,6 +37,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          UV_USE_IO_URING: 0
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
