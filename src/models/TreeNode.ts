@@ -3,7 +3,6 @@ import { Family } from './Family';
 import { Person } from './Person';
 
 export abstract class TreeNode {
-  level?: number;
   complete = false;
   rotationChildren: Iterable<Person> = [];
 

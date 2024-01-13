@@ -44,7 +44,7 @@ async function loadSettings() {
 
 <template>
   <header>
-    <h1 class="title">Wastvedt Family Tree</h1>
+    <h1 class="title">Family Tree</h1>
     <div class="buttons">
       <input
         type="file"

@@ -26,10 +26,7 @@ export class Tree {
   people: { [handle: string]: Person } = {};
   families: { [handle: string]: Family } = {};
   links: Link[] = [];
-  levels: Person[][] = [];
-  maxLevel = 0;
   dateRange: Date[] = [];
-  levelAvg: Date[] = [];
   nodeList: TreeNode[] = [];
   timeScale = scaleTime();
   settings: Ref<Settings>;
@@ -37,21 +34,6 @@ export class Tree {
   constructor() {
     const settingsStore = useSettingsStore();
     this.settings = toRef(settingsStore.settings);
-  }
-
-  //Add a person to a level of the graph
-  addToLevel(person: Person, level: number): void {
-    //make sure the list for this level exists before adding a person to it
-    if (typeof this.levels[level] === 'undefined') {
-      this.levels[level] = [];
-    }
-
-    if (person.level && person.level !== level) {
-      this.levels[level].splice(this.levels[level].indexOf(person));
-    }
-
-    this.levels[level].push(person);
-    person.level = level;
   }
 
   addToDateRange(d: DateInfo): void {

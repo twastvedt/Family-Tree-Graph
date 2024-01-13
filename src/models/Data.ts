@@ -1,7 +1,7 @@
 ﻿import { Person } from './Person';
 import { Family } from './Family';
 import { SortRelation } from './SortItem';
-import { mean, select } from 'd3';
+import { select } from 'd3';
 import { Tree } from './Tree';
 import { useSettingsStore, type Settings } from '@/stores/settingsStore';
 import { toRef, type Ref } from 'vue';
@@ -91,13 +91,8 @@ export class Data {
       }
 
       console.log(
-        `familyWidth: ${familyWidth}, family angle: ${familyCenter}, level: ${level}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`,
+        `familyWidth: ${familyWidth}, family angle: ${familyCenter}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`,
       );
-
-      family.level = level;
-
-      //keep track of how many levels this.data contains, for scaling and graph lines
-      this.tree.maxLevel = Math.max(this.tree.maxLevel, level);
 
       this.familiesToDo.delete(familyId);
 
@@ -109,7 +104,7 @@ export class Data {
 
           parent.parentOrder = i;
 
-          this.addParentSorting(family, parent);
+          this.addParentSorting(family, parent, level);
         });
 
       // Store data for each child of family.
@@ -123,10 +118,6 @@ export class Data {
             child.setup(this);
           }
 
-          if (!child.level) {
-            this.tree.addToLevel(child, level - 1);
-          }
-
           child.angle =
             familyCenter -
             familyWidth / 2 +
@@ -135,7 +126,7 @@ export class Data {
           //add child's family to list to do if it hasn't already been processed
           if (child.parentIn && !this.tree.families[child.parentIn.handle]) {
             this.familiesToDo.set(child.parentIn.handle, {
-              level: child.level!,
+              level: level - 1,
               // Offset to center of child's family.
               sourcePerson: child,
             });
@@ -150,13 +141,6 @@ export class Data {
         });
 
       console.log('families left: ', this.familiesToDo.size);
-    }
-
-    for (let i = 0; i < this.tree.levels.length; i++) {
-      //for people without dates, define a default (average) level date
-      this.tree.levelAvg[i] = new Date(
-        mean(this.tree.levels[i], (el) => el.birth?.date.valueOf()) ?? 0,
-      );
     }
 
     // Set overrides
@@ -253,7 +237,7 @@ export class Data {
   }
 
   //Add sorting info to a parent and the tree
-  addParentSorting(family: Family, parent: Person): void {
+  addParentSorting(family: Family, parent: Person, level: number): void {
     if (!parent.complete) {
       //parent not already processed
 
@@ -261,20 +245,14 @@ export class Data {
 
       parent.setup(this);
     }
-    if (!parent.level && family.level != undefined) {
-      this.tree.addToLevel(parent, family.level);
-    }
 
     //add parent's family to list to do if it hasn't already been processed
     if (
       parent.childOf &&
       !this.tree.families[parent.childOf.handle]?.complete
     ) {
-      if (parent.level == undefined) {
-        throw new Error('No parent level');
-      }
       this.familiesToDo.set(parent.childOf.handle, {
-        level: parent.level + 1,
+        level: level + 1,
         sourcePerson: parent,
       });
     }

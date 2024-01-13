@@ -15,6 +15,7 @@ export interface FamilyOverride {
 export interface Settings {
   rootFamilyId: string;
   dataPath?: string;
+  data?: string;
   layout: {
     ringSpacing: number;
     width: number;
