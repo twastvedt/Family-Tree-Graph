@@ -30,8 +30,13 @@ export class Data {
   }
 
   private parseData(): void {
+    const rootTagId = this.xml.select('tag[name="root"]').attr('handle');
+
     const rootFamilyHandle = this.xml
-      .select('family#' + this.settings.value.rootFamilyId)
+      .selectAll<Element, never>('family')
+      .filter(function () {
+        return !select(this).select(`tagref[hlink='${rootTagId}']`).empty();
+      })
       .attr('handle');
 
     this.familiesToDo.set(rootFamilyHandle, { level: 1 });

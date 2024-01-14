@@ -13,11 +13,12 @@ export interface FamilyOverride {
 }
 
 export interface Settings {
-  rootFamilyId: string;
   dataPath?: string;
   data?: string;
   layout: {
-    ringSpacing: number;
+    /**
+     * Width of drawing in SVG units.
+     */
     width: number;
     textSize: number;
     maxYear: number;

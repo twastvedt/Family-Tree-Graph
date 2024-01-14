@@ -1,6 +1,7 @@
 ## Project Setup
 
-1. Export an xml file from Gramps to `public/data/family-tree.xml`.
+1. Tag one family in Gramps with a tag named "root".
+2. Export an xml file from Gramps to `public/data/family-tree.xml`. If compressed, unzip.
 
 ```sh
 npm install
@@ -27,5 +28,4 @@ npm run lint
 ## To Do
 
 1. Fix the center (see poster for ideas).
-1. Change default locations to level date averages
 1. Use parsed event dates to place nodes
