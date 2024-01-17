@@ -1,8 +1,9 @@
 {
   "layout": {
-    "width": 1000,
+    "unitsPerYear": 6,
     "textSize": 12,
     "maxYear": 2020,
+    "minFamilyWidth": 15,
     "fadeYears": 15
   },
   "dateLabels": [90, 270],

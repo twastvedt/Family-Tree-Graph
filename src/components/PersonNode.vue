@@ -38,7 +38,7 @@ const lifelineEnd = computed(() => {
     }
     return person.value.death.date;
   }
-  return new Date(settings.value.layout.maxYear, 0);
+  return settingsStore.maxDate;
 });
 
 const mainPathGradient = computed(

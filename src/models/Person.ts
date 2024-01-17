@@ -5,7 +5,7 @@ import { Name } from './Name';
 
 import { DateTime } from 'luxon';
 import type { BaseType } from 'd3';
-import { estimable, type DateInfo } from './Tree';
+import { type DateInfo, getDateInfo, estimable } from './Tree';
 
 export type PersonSelection = d3.Selection<
   SVGGElement,
@@ -107,20 +107,22 @@ export class Person extends TreeNode {
 
       if (!e.empty()) {
         switch (e.select('type').text()) {
-          case 'Birth':
-            thisPerson.birth = {
-              date: new Date(e.select('dateval').attr('val')),
-              isEstimate: false,
-            };
-            data.tree.addToDateRange(thisPerson.birth);
+          case 'Birth': {
+            const date = getDateInfo(e);
+            if (date) {
+              thisPerson.birth = date;
+              data.tree.addToDateRange(thisPerson.birth);
+            }
             break;
-          case 'Death':
-            thisPerson.death = {
-              date: new Date(e.select('dateval').attr('val')),
-              isEstimate: false,
-            };
-            data.tree.addToDateRange(thisPerson.death);
+          }
+          case 'Death': {
+            const date = getDateInfo(e);
+            if (date) {
+              thisPerson.death = date;
+              data.tree.addToDateRange(thisPerson.death);
+            }
             break;
+          }
           default:
             console.log('Unhandled Person event:', e.select('type').text());
         }
@@ -181,7 +183,16 @@ export class Person extends TreeNode {
       }
     }
 
-    if (this.birth && estimable(this.death)) {
+    if (!this.birth && this.death) {
+      this.birth = {
+        date: DateTime.fromJSDate(this.death.date)
+          .minus({
+            years: TreeNode.estimateLifespan(undefined, this.death.date) ?? 0,
+          })
+          .toJSDate(),
+        isEstimate: true,
+      };
+    } else if (this.birth && estimable(this.death)) {
       // Estimate unknown death from known birth.
       if (
         DateTime.now().diff(DateTime.fromJSDate(this.birth.date), 'year')

@@ -4,7 +4,7 @@ import { Person } from './Person';
 
 import { DateTime } from 'luxon';
 import { mean } from 'd3';
-import { estimable, type DateInfo } from './Tree';
+import { estimable, type DateInfo, getDateInfo } from './Tree';
 
 export type DefinedFamily = Family & Required<Pick<Family, 'marriage'>>;
 
@@ -55,13 +55,14 @@ export class Family extends TreeNode {
 
         if (!e.empty()) {
           switch (e.select('type').text()) {
-            case 'Marriage':
-              thisFamily.marriage = {
-                date: new Date(e.select('dateval').attr('val')),
-                isEstimate: false,
-              };
-              data.tree.addToDateRange(thisFamily.marriage);
+            case 'Marriage': {
+              const date = getDateInfo(e);
+              if (date) {
+                thisFamily.marriage = date;
+                data.tree.addToDateRange(thisFamily.marriage);
+              }
               break;
+            }
             default:
               console.log('Unhandled event', e.select('type').text());
           }

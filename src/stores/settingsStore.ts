@@ -1,4 +1,4 @@
-﻿import { ref } from 'vue';
+﻿import { computed, ref } from 'vue';
 import settings from '../settings.json';
 import { defineStore } from 'pinia';
 
@@ -17,11 +17,18 @@ export interface Settings {
   data?: string;
   layout: {
     /**
-     * Width of drawing in SVG units.
+     * Year in SVG units.
      */
-    width: number;
+    unitsPerYear: number;
     textSize: number;
-    maxYear: number;
+    /**
+     * Date value of center of graph. If unset, the current year.
+     */
+    maxYear?: number;
+    /**
+     * Minimum arc length of a family.
+     */
+    minFamilyWidth?: number;
     /**
      * Size of lifeline gradient, in years, when date of death is uncertain.
      */
@@ -52,7 +59,14 @@ export const useSettingsStore = defineStore(
       settingsTyped.value = value ?? structuredClone(settings);
       location.reload();
     }
-    return { settings: settingsTyped, reset };
+
+    const maxYear = computed(
+      () => settingsTyped.value.layout.maxYear ?? new Date().getFullYear(),
+    );
+
+    const maxDate = computed(() => new Date(maxYear.value, 0));
+
+    return { settings: settingsTyped, maxDate, maxYear, reset };
   },
   { persist: true },
 );

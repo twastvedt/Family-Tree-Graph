@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, toRef } from 'vue';
 import { defineStore } from 'pinia';
 import { useSettingsStore } from './settingsStore';
 import { Tree, type DateInfo } from '@/models/Tree';
@@ -6,15 +6,17 @@ import { Data } from '@/models/Data';
 import { xml, drag, select } from 'd3';
 
 export const useFamilyStore = defineStore('family', () => {
-  const settings = useSettingsStore();
+  const settings = toRef(useSettingsStore().settings);
 
   const tree = ref<Tree>();
 
   const ready = (async () => {
-    if (settings.settings.dataPath) {
-      const xmlDoc = await xml(settings.settings.dataPath);
+    if (settings.value.dataPath) {
+      const xmlDoc = await xml(settings.value.dataPath);
       const data = new Data(xmlDoc);
       tree.value = data.tree;
+    } else if (settings.value.data) {
+      loadData(settings.value.data);
     }
   })();
 
@@ -28,6 +30,8 @@ export const useFamilyStore = defineStore('family', () => {
 
     const data = new Data(doc);
     tree.value = data.tree;
+
+    settings.value.data = xml;
   }
 
   function addRotateElement(

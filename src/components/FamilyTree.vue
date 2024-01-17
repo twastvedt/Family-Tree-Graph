@@ -38,10 +38,7 @@ const minYear = family.tree.dateRange[0].getFullYear();
 
 // Draw grid for double the range of dates.
 const years = [
-  ...range(
-    minYear - (settings.value.layout.maxYear - minYear),
-    settings.value.layout.maxYear,
-  ),
+  ...range(minYear - (settingsStore.maxYear - minYear), settingsStore.maxYear),
 ];
 
 const labelYears = years.filter((y) => y % 50 === 0);
@@ -71,7 +68,7 @@ onMounted(async (): Promise<void> => {
 
   zoomBehavior = d3
     .zoom<SVGSVGElement, unknown>()
-    .scaleExtent([1, 8])
+    .scaleExtent([0, 8])
     .on('zoom', (e: d3.D3ZoomEvent<SVGGElement, unknown>) => {
       setZoom(e.transform);
     });

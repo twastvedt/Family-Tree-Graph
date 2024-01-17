@@ -19,10 +19,51 @@ const element = ref<SVGGElement>();
 const lineTarget = ref<SVGElement>();
 const centerTarget = ref<SVGElement>();
 
+const startAngle = computed(() => {
+  if (family.value.parents.length == 2) {
+    return family.value.parents[0].angle;
+  } else {
+    const childAngles = family.value.children.map((p) => p.angle);
+    const parentAngles = family.value.parents.map((p) => p.angle);
+
+    let start = Math.min(...childAngles);
+
+    const minParent = Math.min(...parentAngles);
+
+    if (minParent <= start) {
+      start = minParent;
+    } else {
+      // TODO: setting
+      start -= 5;
+    }
+
+    return start;
+  }
+});
+
+const endAngle = computed(() => {
+  if (family.value.parents.length == 2) {
+    return family.value.parents[1].angle;
+  } else {
+    const childAngles = family.value.children.map((p) => p.angle);
+    const parentAngles = family.value.parents.map((p) => p.angle);
+
+    let end = Math.max(...childAngles);
+
+    const maxParent = Math.max(...parentAngles);
+
+    if (maxParent >= end) {
+      end = maxParent;
+    } else {
+      end += 5;
+    }
+
+    return end;
+  }
+});
+
 const centerAngle = computed(
-  () =>
-    family.value.parents[0].angle +
-    (family.value.parents[1].angle - family.value.parents[0].angle) / 2,
+  () => startAngle.value + (endAngle.value - startAngle.value) / 2,
 );
 
 const reversed = computed(() => centerAngle.value % 360 <= 180);
@@ -54,8 +95,8 @@ const dateAngle = computed(() => {
 });
 
 const marriageLinePath = computed(() => {
-  let start = family.value.parents[0].angle;
-  let end = family.value.parents[1].angle;
+  let start = startAngle.value;
+  let end = endAngle.value;
 
   //keep text upright
   if (reversed.value) {

@@ -67,7 +67,13 @@ export class Data {
       const level = familyData.level;
       const sourcePerson = familyData.sourcePerson;
 
-      const familyWidth = 360 / 2 ** level;
+      let familyWidth = 360 / 2 ** level;
+      if (this.settings.value.layout.minFamilyWidth) {
+        familyWidth = Math.max(
+          familyWidth,
+          this.settings.value.layout.minFamilyWidth,
+        );
+      }
       let familyCenter = 180;
 
       if (sourcePerson) {

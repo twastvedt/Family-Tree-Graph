@@ -1,4 +1,4 @@
-import { scaleTime } from 'd3';
+import { scaleTime, type BaseType, type Selection } from 'd3';
 import type { Family } from './Family';
 import type { Person } from './Person';
 import type { SortRelation } from './SortItem';
@@ -18,6 +18,18 @@ export interface DateInfo {
   isOverridden?: boolean;
 }
 
+export function getDateInfo(
+  node: Selection<BaseType, unknown, BaseType, unknown>,
+): DateInfo | undefined {
+  const date = node.select('dateval');
+  if (!date.empty() && date.attr('val')) {
+    return {
+      date: new Date(date.attr('val')),
+      isEstimate: false,
+    };
+  }
+}
+
 export function estimable(info?: DateInfo) {
   return !info || (info.isEstimate && !info.isOverridden);
 }
@@ -30,10 +42,10 @@ export class Tree {
   nodeList: TreeNode[] = [];
   timeScale = scaleTime();
   settings: Ref<Settings>;
+  settingsStore = useSettingsStore();
 
   constructor() {
-    const settingsStore = useSettingsStore();
-    this.settings = toRef(settingsStore.settings);
+    this.settings = toRef(this.settingsStore.settings);
   }
 
   addToDateRange(d: DateInfo): void {
@@ -63,12 +75,11 @@ export class Tree {
   }
 
   updateScale() {
+    const years = this.settingsStore.maxYear - this.dateRange[0].getFullYear();
+
     this.timeScale
-      .domain([
-        this.dateRange[0],
-        new Date(this.settings.value.layout.maxYear, 0),
-      ])
-      .range([this.settings.value.layout.width / 2, 0]);
+      .domain([this.dateRange[0], this.settingsStore.maxDate])
+      .range([(years * this.settings.value.layout.unitsPerYear) / 2, 0]);
   }
 
   scale(date: Date) {
