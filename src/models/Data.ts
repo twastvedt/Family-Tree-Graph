@@ -67,43 +67,10 @@ export class Data {
       const level = familyData.level;
       const sourcePerson = familyData.sourcePerson;
 
-      let familyWidth = 360 / 2 ** level;
-      if (this.settings.value.layout.minFamilyWidth) {
-        familyWidth = Math.max(
-          familyWidth,
-          this.settings.value.layout.minFamilyWidth,
-        );
-      }
-      let familyCenter = 180;
+      family.level = level;
 
-      if (sourcePerson) {
-        let sourceIndex = family.parents.findIndex(
-          (p) => p.handle === sourcePerson.handle,
-        );
-
-        if (sourceIndex !== -1) {
-          familyCenter =
-            sourcePerson.angle +
-            ((sourceIndex == 1 ? -1 : 1) * familyWidth) / 2;
-        } else {
-          sourceIndex = family.children.findIndex(
-            (p) => p.handle === sourcePerson.handle,
-          );
-
-          if (sourceIndex !== -1) {
-            familyCenter =
-              sourcePerson.angle -
-              ((sourceIndex + 1) / (family.children.length + 1)) * familyWidth +
-              familyWidth / 2;
-          } else {
-            throw new Error("Can't find source person in new family!");
-          }
-        }
-      }
-
-      console.log(
-        `familyWidth: ${familyWidth}, family angle: ${familyCenter}, sourcePerson.angle: ${sourcePerson?.angle}, sourcePerson: ${sourcePerson?.firstName}`,
-      );
+      //keep track of how many levels this.data contains, for scaling and graph lines
+      this.tree.maxLevel = Math.max(this.tree.maxLevel, level);
 
       this.familiesToDo.delete(familyId);
 
@@ -111,11 +78,9 @@ export class Data {
       family.parents
         .filter((p) => p !== sourcePerson)
         .forEach((parent, i) => {
-          parent.angle = familyCenter + (i - 0.5) * familyWidth;
-
           parent.parentOrder = i;
 
-          this.addParentSorting(family, parent, level);
+          this.addParentSorting(family, parent);
         });
 
       // Store data for each child of family.
@@ -129,15 +94,14 @@ export class Data {
             child.setup(this);
           }
 
-          child.angle =
-            familyCenter -
-            familyWidth / 2 +
-            (familyWidth / (family.children.length + 1)) * (i + 1);
+          if (!child.level) {
+            this.tree.addToLevel(child, level - 1);
+          }
 
           //add child's family to list to do if it hasn't already been processed
           if (child.parentIn && !this.tree.families[child.parentIn.handle]) {
             this.familiesToDo.set(child.parentIn.handle, {
-              level: level - 1,
+              level: child.level!,
               // Offset to center of child's family.
               sourcePerson: child,
             });
@@ -245,10 +209,65 @@ export class Data {
     this.tree.estimate();
 
     this.tree.updateScale();
+
+    this.tree.walkFamilies(rootFamilyHandle, (family, sourcePerson) => {
+      let familyAngle = 360 / 2 ** family.level!;
+      if (this.settings.value.layout.minFamilyWidth && family.marriage?.date) {
+        const radius = this.tree.scale(family.marriage.date);
+        const circumference = Math.PI * 2 * radius;
+        const familyWidth = (familyAngle / 360) * circumference;
+
+        if (familyWidth < this.settings.value.layout.minFamilyWidth) {
+          familyAngle =
+            (360 * this.settings.value.layout.minFamilyWidth) / circumference;
+        }
+      }
+      let familyCenter = 180;
+
+      if (sourcePerson) {
+        let sourceIndex = family.parents.findIndex(
+          (p) => p.handle === sourcePerson.handle,
+        );
+
+        if (sourceIndex !== -1) {
+          familyCenter =
+            sourcePerson.angle +
+            ((sourceIndex == 1 ? -1 : 1) * familyAngle) / 2;
+        } else {
+          sourceIndex = family.children.findIndex(
+            (p) => p.handle === sourcePerson.handle,
+          );
+
+          if (sourceIndex !== -1) {
+            familyCenter =
+              sourcePerson.angle -
+              ((sourceIndex + 1) / (family.children.length + 1)) * familyAngle +
+              familyAngle / 2;
+          } else {
+            throw new Error("Can't find source person in new family!");
+          }
+        }
+      }
+
+      family.parents
+        .filter((p) => p !== sourcePerson)
+        .forEach((parent, i) => {
+          parent.angle = familyCenter + (i - 0.5) * familyAngle;
+        });
+
+      family.children
+        .filter((p) => p !== sourcePerson)
+        .forEach((child, i) => {
+          child.angle =
+            familyCenter -
+            familyAngle / 2 +
+            (familyAngle / (family.children.length + 1)) * (i + 1);
+        });
+    });
   }
 
   //Add sorting info to a parent and the tree
-  addParentSorting(family: Family, parent: Person, level: number): void {
+  addParentSorting(family: Family, parent: Person): void {
     if (!parent.complete) {
       //parent not already processed
 
@@ -256,14 +275,20 @@ export class Data {
 
       parent.setup(this);
     }
+    if (!parent.level && family.level != undefined) {
+      this.tree.addToLevel(parent, family.level);
+    }
 
     //add parent's family to list to do if it hasn't already been processed
     if (
       parent.childOf &&
       !this.tree.families[parent.childOf.handle]?.complete
     ) {
+      if (parent.level == undefined) {
+        throw new Error('No parent level');
+      }
       this.familiesToDo.set(parent.childOf.handle, {
-        level: level + 1,
+        level: parent.level + 1,
         sourcePerson: parent,
       });
     }

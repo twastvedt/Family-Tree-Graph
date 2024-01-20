@@ -78,7 +78,7 @@ export const useFamilyStore = defineStore('family', () => {
             const radius = Math.round(Math.sqrt(event.x ** 2 + event.y ** 2));
             const date = tree.value?.timeScale.invert(radius);
             if (date) {
-              getDateInfo().date = new Date(date.getFullYear(), 0, 0);
+              getDateInfo().date = new Date(date.getUTCFullYear(), 0, 0);
             }
           },
         )
@@ -92,7 +92,7 @@ export const useFamilyStore = defineStore('family', () => {
 
   function formatDate(date: Date): string {
     // return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_FULL);
-    return date.getFullYear().toString();
+    return date.getUTCFullYear().toString();
   }
 
   return {

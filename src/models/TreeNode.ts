@@ -1,27 +1,12 @@
-﻿import * as d3 from 'd3';
-import { Family } from './Family';
+﻿import { Family } from './Family';
 import { Person } from './Person';
 
 export abstract class TreeNode {
+  level?: number;
   complete = false;
   rotationChildren: Iterable<Person> = [];
 
   constructor(public handle: string) {}
-
-  static estimateLifespan(
-    birth: Date | undefined,
-    death: Date | undefined = undefined,
-  ): number | undefined {
-    const interp = d3.scaleLinear().domain([1775, 2019]).range([38, 92]);
-
-    if (birth !== undefined) {
-      return interp(birth.getUTCFullYear());
-    } else if (death !== undefined) {
-      return interp.domain(
-        interp.domain().map((d, i) => d + interp.range()[i]),
-      )(death.getUTCFullYear());
-    }
-  }
 
   /**
    * Get all tree nodes that should be rotated if this node is rotated.

@@ -98,13 +98,22 @@ export class Family extends TreeNode {
 
     return super.setRotationChildren(familiesToDo);
   }
+  static averageDateTime(dates: DateTime[]) {
+    const min = DateTime.min(...dates);
+    return min.plus({
+      milliseconds: dates.reduce(
+        (a, b) => a + b.diff(min).milliseconds / dates.length,
+        0,
+      ),
+    });
+  }
 
   estimate() {
     if (!estimable(this.marriage)) {
       return;
     }
 
-    console.log('Undefined marriage');
+    console.log(`Undefined marriage: ${this.handle}`);
 
     // Don't have an exact date for this marriage - try to estimate.
     const childBirths = this.children
@@ -139,31 +148,26 @@ export class Family extends TreeNode {
         ' Average of indefinite births of parents (+25) and children (-5).',
       );
 
-      const dates: number[] = [];
+      const dates: DateTime[] = [];
 
       if (this.parents.some((p) => p.birth)) {
-        dates.push(
-          DateTime.fromMillis(
-            this.parents
-              .filter((p) => p.birth)
-              .map((p) => p.birth!.date.getUTCMilliseconds())
-              .reduce((a, b, i) => (a * i + b) / (i + 1)),
-          )
-            .plus({ years: 25 })
-            .valueOf(),
-        );
+        // Average of parents' births.
+        const births = this.parents
+          .filter((p) => p.birth)
+          .map((p) => DateTime.fromJSDate(p.birth!.date));
+
+        dates.push(Family.averageDateTime(births).plus({ years: 25 }));
       }
 
       if (this.children.some((c) => c.birth)) {
         dates.push(
+          // Youngest child.
           DateTime.fromJSDate(
             this.children
               .filter((p) => p.birth)
               .map((c) => c.birth!.date)
               .reduce((a, b) => (a < b ? a : b)),
-          )
-            .minus({ years: 5 })
-            .valueOf(),
+          ).minus({ years: 5 }),
         );
       }
 
@@ -171,7 +175,7 @@ export class Family extends TreeNode {
         throw new Error('No data with which to place this marriage date.');
       }
 
-      marriageDate = new Date(dates.reduce((t, d) => t + d) / dates.length);
+      marriageDate = Family.averageDateTime(dates).toJSDate();
     }
 
     this.marriage = {

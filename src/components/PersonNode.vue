@@ -204,7 +204,7 @@ onMounted(() => {
         settings.value.overrides.people[person.value.handle] = Object.assign(
           settings.value.overrides.people[person.value.handle] ?? {},
           {
-            birth: person.value.birth.date.getFullYear(),
+            birth: person.value.birth.date.getUTCFullYear(),
           },
         );
       },
@@ -219,7 +219,7 @@ onMounted(() => {
         settings.value.overrides.people[person.value.handle] = Object.assign(
           settings.value.overrides.people[person.value.handle] ?? {},
           {
-            death: person.value.death?.date.getFullYear(),
+            death: person.value.death?.date.getUTCFullYear(),
           },
         );
       },
@@ -234,14 +234,14 @@ onMounted(() => {
     v-if="!person.birth.isEstimate"
   >
     <textPath
-      :xlink:href="`#level-${person.birth.date.getFullYear()}`"
+      :xlink:href="`#level-${person.birth.date.getUTCFullYear()}`"
       :class="['dateDetail', dateFlipped ? 'reversed' : undefined]"
       :startOffset="`${
         (reversed90 ? person.angle : 360 - person.angle) / 3.6
       }%`"
       :side="reversed90 ? 'left' : 'right'"
     >
-      {{ person.birth.date.getFullYear() }}
+      {{ person.birth.date.getUTCFullYear() }}
     </textPath>
   </text>
   <text
@@ -250,14 +250,14 @@ onMounted(() => {
     v-if="person.death?.isEstimate === false"
   >
     <textPath
-      :xlink:href="`#level-${person.death.date.getFullYear()}`"
+      :xlink:href="`#level-${person.death.date.getUTCFullYear()}`"
       :class="['dateDetail', dateFlipped ? 'reversed' : undefined]"
       :startOffset="`${
         (reversed90 ? person.angle : 360 - person.angle) / 3.6
       }%`"
       :side="reversed90 ? 'left' : 'right'"
     >
-      {{ person.death.date.getFullYear() }}
+      {{ person.death.date.getUTCFullYear() }}
     </textPath>
   </text>
 

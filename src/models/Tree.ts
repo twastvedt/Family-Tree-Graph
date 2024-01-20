@@ -21,12 +21,20 @@ export interface DateInfo {
 export function getDateInfo(
   node: Selection<BaseType, unknown, BaseType, unknown>,
 ): DateInfo | undefined {
-  const date = node.select('dateval');
-  if (!date.empty() && date.attr('val')) {
-    return {
-      date: new Date(date.attr('val')),
-      isEstimate: false,
-    };
+  const dateNode = node.select('dateval');
+  const dateText = !dateNode.empty() && dateNode.attr('val');
+
+  if (dateText) {
+    const date = new Date(dateText);
+
+    if (!isNaN(date.getTime())) {
+      return {
+        date,
+        isEstimate: false,
+      };
+    }
+
+    console.warn(`Unable to parse date: "${dateText}`);
   }
 }
 
@@ -38,6 +46,8 @@ export class Tree {
   people: { [handle: string]: Person } = {};
   families: { [handle: string]: Family } = {};
   links: Link[] = [];
+  levels: Person[][] = [];
+  maxLevel = 0;
   dateRange: Date[] = [];
   nodeList: TreeNode[] = [];
   timeScale = scaleTime();
@@ -46,6 +56,57 @@ export class Tree {
 
   constructor() {
     this.settings = toRef(this.settingsStore.settings);
+  }
+
+  //Add a person to a level of the graph
+  addToLevel(person: Person, level: number): void {
+    //make sure the list for this level exists before adding a person to it
+    if (typeof this.levels[level] === 'undefined') {
+      this.levels[level] = [];
+    }
+
+    if (person.level && person.level !== level) {
+      this.levels[level].splice(this.levels[level].indexOf(person));
+    }
+
+    this.levels[level].push(person);
+    person.level = level;
+  }
+
+  walkFamilies(
+    rootHandle: string,
+    func: (family: Family, sourcePerson?: Person) => void,
+  ) {
+    const familiesToDo = new Map<string, Person | undefined>();
+    const familiesDone = new Set<string>();
+    familiesToDo.set(rootHandle, undefined);
+
+    while (familiesToDo.size) {
+      const familyId = familiesToDo.keys().next().value;
+      const family = this.families[familyId];
+
+      if (!family) {
+        throw new Error(`Could not find family ${familyId}.`);
+      }
+
+      const sourcePerson = familiesToDo.get(familyId);
+
+      func(family, sourcePerson);
+      familiesToDo.delete(familyId);
+      familiesDone.add(familyId);
+
+      family.parents.forEach((p) => {
+        if (p.childOf && !familiesDone.has(p.childOf.handle)) {
+          familiesToDo.set(p.childOf.handle, p);
+        }
+      });
+
+      family.children.forEach((c) => {
+        if (c.parentIn && !familiesDone.has(c.parentIn.handle)) {
+          familiesToDo.set(c.parentIn.handle, c);
+        }
+      });
+    }
   }
 
   addToDateRange(d: DateInfo): void {
@@ -75,7 +136,8 @@ export class Tree {
   }
 
   updateScale() {
-    const years = this.settingsStore.maxYear - this.dateRange[0].getFullYear();
+    const years =
+      this.settingsStore.maxYear - this.dateRange[0].getUTCFullYear();
 
     this.timeScale
       .domain([this.dateRange[0], this.settingsStore.maxDate])
@@ -83,6 +145,6 @@ export class Tree {
   }
 
   scale(date: Date) {
-    return this.timeScale(new Date(date.getFullYear(), 0, 1));
+    return this.timeScale(new Date(date.getUTCFullYear(), 0, 1));
   }
 }

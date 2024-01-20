@@ -61,7 +61,7 @@ export const useSettingsStore = defineStore(
     }
 
     const maxYear = computed(
-      () => settingsTyped.value.layout.maxYear ?? new Date().getFullYear(),
+      () => settingsTyped.value.layout.maxYear ?? new Date().getUTCFullYear(),
     );
 
     const maxDate = computed(() => new Date(maxYear.value, 0));

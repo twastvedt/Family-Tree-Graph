@@ -177,7 +177,7 @@ onMounted(() => {
         settings.value.overrides.families[family.value.handle] = Object.assign(
           settings.value.overrides.families[family.value.handle] ?? {},
           {
-            year: family.value.marriage.date.getFullYear(),
+            year: family.value.marriage.date.getUTCFullYear(),
           },
         );
       },
@@ -192,12 +192,12 @@ onMounted(() => {
       :dy="reversed ? -3.5 : 5.6"
     >
       <textPath
-        :xlink:href="`#level-${family.marriage.date.getFullYear()}`"
+        :xlink:href="`#level-${family.marriage.date.getUTCFullYear()}`"
         :class="['dateDetail']"
         :startOffset="`${(reversed ? 360 - dateAngle : dateAngle) / 3.6}%`"
         :side="reversed ? 'right' : 'left'"
       >
-        {{ family.marriage.date.getFullYear() }}
+        {{ family.marriage.date.getUTCFullYear() }}
       </textPath>
     </text>
     <path

@@ -4,7 +4,7 @@ import { TreeNode } from './TreeNode';
 import { Name } from './Name';
 
 import { DateTime } from 'luxon';
-import type { BaseType } from 'd3';
+import { scaleLinear, type BaseType } from 'd3';
 import { type DateInfo, getDateInfo, estimable } from './Tree';
 
 export type PersonSelection = d3.Selection<
@@ -160,6 +160,24 @@ export class Person extends TreeNode {
     super.setRotationChildren([[this.childOf, this]], [this]);
   }
 
+  static estimateLifespan(
+    birth: Date | undefined,
+    death: Date | undefined = undefined,
+  ): number {
+    const interp = scaleLinear().domain([1775, 2020]).range([38, 80]);
+    let age;
+
+    if (birth !== undefined) {
+      age = interp(birth.getUTCFullYear());
+    } else if (death !== undefined) {
+      age = interp.domain(interp.domain().map((d, i) => d + interp.range()[i]))(
+        death.getUTCFullYear(),
+      );
+    }
+
+    return Math.max(35, age ?? 40);
+  }
+
   estimate() {
     if (estimable(this.birth) && this.parentIn?.marriage) {
       // Estimate unknown birth from marriage date.
@@ -187,7 +205,7 @@ export class Person extends TreeNode {
       this.birth = {
         date: DateTime.fromJSDate(this.death.date)
           .minus({
-            years: TreeNode.estimateLifespan(undefined, this.death.date) ?? 0,
+            years: Person.estimateLifespan(undefined, this.death.date),
           })
           .toJSDate(),
         isEstimate: true,
@@ -196,12 +214,13 @@ export class Person extends TreeNode {
       // Estimate unknown death from known birth.
       if (
         DateTime.now().diff(DateTime.fromJSDate(this.birth.date), 'year')
-          .years > (TreeNode.estimateLifespan(undefined, new Date()) ?? 0 * 1.5)
+          .years >
+        Person.estimateLifespan(undefined, new Date()) * 1.5
       ) {
         // Unlikely this person is still living.
         this.death = {
           date: DateTime.fromJSDate(this.birth.date)
-            .plus({ years: TreeNode.estimateLifespan(this.birth.date) ?? 0 })
+            .plus({ years: Person.estimateLifespan(this.birth.date) })
             .toJSDate(),
           isEstimate: true,
         };

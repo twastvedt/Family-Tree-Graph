@@ -34,7 +34,7 @@ function* range(start: number, end: number, step = 1) {
   }
 }
 
-const minYear = family.tree.dateRange[0].getFullYear();
+const minYear = family.tree.dateRange[0].getUTCFullYear();
 
 // Draw grid for double the range of dates.
 const years = [
