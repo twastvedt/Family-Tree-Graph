@@ -118,15 +118,12 @@ export class Data {
       console.log('families left: ', this.familiesToDo.size);
     }
 
-    // Set overrides
+    // Set date overrides
     for (const [handle, override] of Object.entries(
       this.settings.value.overrides.people,
     )) {
       const person = this.tree.people[handle];
       if (person) {
-        if (override.angle != undefined) {
-          person.angle = override.angle;
-        }
         if (override.birth != undefined) {
           person.birth = {
             date: new Date(override.birth, 0, 1),
@@ -264,6 +261,16 @@ export class Data {
             (familyAngle / (family.children.length + 1)) * (i + 1);
         });
     });
+
+    // Set angle overrides
+    for (const [handle, override] of Object.entries(
+      this.settings.value.overrides.people,
+    )) {
+      const person = this.tree.people[handle];
+      if (person && override.angle != undefined) {
+        person.angle = override.angle;
+      }
+    }
   }
 
   //Add sorting info to a parent and the tree

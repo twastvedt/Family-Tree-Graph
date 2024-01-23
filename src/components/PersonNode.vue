@@ -265,6 +265,7 @@ onMounted(() => {
     :class="['node', 'person', person.gender]"
     :id="person.handle"
     :transform="`rotate(${person.angle - 90})`"
+    ref="rotateTarget"
   >
     <linearGradient
       v-if="lifelineGradient"
@@ -340,7 +341,6 @@ onMounted(() => {
 
     <line
       class="pointerTarget rotate"
-      ref="rotateTarget"
       x1="0"
       x2="0"
       :y1="scale(mainPathStart)"
@@ -351,7 +351,6 @@ onMounted(() => {
         {{ title }}
       </title>
     </line>
-    />
 
     <line
       v-if="person.birth.isEstimate"

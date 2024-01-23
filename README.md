@@ -27,7 +27,5 @@ npm run lint
 
 ## To Do
 
-1. Marriages get wider at edge??
-1. type="about" dateVal - estimate? Other types?
 1. Fix the center (see poster for ideas).
 1. Use parsed event dates to place nodes
