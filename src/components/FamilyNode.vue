@@ -33,8 +33,9 @@ const startAngle = computed(() => {
     if (minParent <= start) {
       start = minParent;
     } else {
-      // TODO: setting
-      start -= 5;
+      start -=
+        (settings.value.layout.unknownMarriageExtension * 180) /
+        (radius.value * Math.PI);
     }
 
     return start;
@@ -55,16 +56,16 @@ const endAngle = computed(() => {
     if (maxParent >= end) {
       end = maxParent;
     } else {
-      end += 5;
+      end +=
+        (settings.value.layout.unknownMarriageExtension * 180) /
+        (radius.value * Math.PI);
     }
 
     return end;
   }
 });
 
-const centerAngle = computed(
-  () => startAngle.value + (endAngle.value - startAngle.value) / 2,
-);
+const centerAngle = computed(() => (startAngle.value + endAngle.value) / 2);
 
 const reversed = computed(() => centerAngle.value % 360 <= 180);
 const radius = computed(() => scale(family.value.marriage.date));

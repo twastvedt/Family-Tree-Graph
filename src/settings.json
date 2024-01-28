@@ -4,7 +4,8 @@
     "textSize": 12,
     "maxYear": 2020,
     "minFamilyWidth": 80,
-    "fadeYears": 15
+    "fadeYears": 15,
+    "unknownMarriageExtension": 10
   },
   "dateLabels": [90, 270],
   "colors": {

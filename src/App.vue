@@ -54,7 +54,7 @@ async function loadSettings() {
         style="display: none"
       />
       <button @click="() => xmlInput?.click()">Load Gramps xml</button>
-      <button @click="settingsStore.reset">Reset Settings</button>
+      <button @click="() => settingsStore.reset()">Reset Settings</button>
       <button @click="exportSettings">Export Settings</button>
       <input
         type="file"

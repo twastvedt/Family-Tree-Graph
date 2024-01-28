@@ -33,6 +33,10 @@ export interface Settings {
      * Size of lifeline gradient, in years, when date of death is uncertain.
      */
     fadeYears: number;
+    /**
+     * Length of tail on marriage line when one partner is unknown.
+     */
+    unknownMarriageExtension: number;
   };
   /**
    * Angle of each line of date labels.
